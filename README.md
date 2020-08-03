@@ -1,6 +1,8 @@
 # picky
 See who is active or not in your chats. Keep control of your groups as Urbit expands.
 
+In addition to being useful, `%picky` shows lots of examples of how to use already-available Urbit ship data to craft custom group/user experiences.
+
 ## Installation
 * make sure your `home` is mounted (`|mount %`)
 
