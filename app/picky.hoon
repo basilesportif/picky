@@ -6,17 +6,19 @@
 |%
 +$  versioned-state
     $%  state-0
+        state-1
     ==
 ::
 +$  state-0
     $:  [%0 counter=@]
     ==
++$  state-1  [%1 =chat-cache]
 ::
 +$  card  card:agent:gall
 ::
 --
 %-  agent:dbug
-=|  state-0
+=|  state-1
 =*  state  -
 ^-  agent:gall
 =<
@@ -34,9 +36,15 @@
   !>(state)
 ++  on-load
   |=  old-state=vase
+  ~&  >  '%picky  recompiled successfully'
   ^-  (quip card _this)
-  ~&  >  '%picky recompiled successfully'
-  `this(state !<(versioned-state old-state))
+  =/  old  !<(versioned-state old-state)
+  ?-  -.old
+      %1  `this(state old)
+    ::
+      %0
+    `this(state [%1 *^chat-cache])
+  ==
 ++  on-poke
   |=  [=mark =vase]
   ^-  (quip card _this)
@@ -52,8 +60,11 @@
     ^-  (quip card _state)
     ?-    -.action
         %load-chats
-      ~&  >>  (~(get by all-my-groups:hc) [~bacdul-timzod %dm--timluc-miptev])
-      `state
+      =/  mgc  my-groups-chats:hc
+      =.  chat-cache.state  (update-cache:hc mgc)
+      ::  TODO: run summarize and...do something with it?
+      :_  state
+      ~[[%pass /chat-store-updates %agent [our.bowl %chat-store] %watch /updates]]
       ::
         %dummy
       `state
@@ -64,24 +75,49 @@
 ++  on-leave  on-leave:def
 ++  on-peek   on-peek:def
 ++  on-agent  on-agent:def
+::  TODO: handle chat updates
 ++  on-arvo   on-arvo:def
 ++  on-fail   on-fail:def
 --
 |_  =bowl:gall
 +*  grp  ~(. group-lib bowl)
-++  all-my-groups
+++  update-cache
+  |=  xs=(list [gp=group-path:md cp=app-path:md])
+  =*  ccs  chat-cache.state
+  |-  ^-  ^chat-cache
+  ?~  xs  ccs
+  =/  m=(unit mailbox:store)
+    (scry-mailbox cp)
+  ?~  m  $(xs t.xs)
+  $(xs t.xs, ccs (cache-mailbox cp u.m))
+::  caches a chat-store if it's uncached
+::
+++  cache-mailbox
+  |=  [chat-path=path m=mailbox:store]
+  ^-  ^chat-cache
+  =*  ccs  chat-cache.state
+  ?~  envelopes.m  ccs
+  ::  make sure this chat-path not here before we flop
+  ?:  (~(has by ccs) [chat-path author.i.envelopes.m])
+    ccs
+  =/  es  (flop envelopes.m)
+  |-
+  ?~  es  ccs
+  =/  user-msgs=(list envelope:store)
+    (~(gut by ccs) [chat-path author.i.es] ~)
+  =.  ccs
+    %+  ~(put by ccs)
+      [chat-path author.i.es]
+    [i.es user-msgs]
+  $(es t.es)
+++  summarize
+  |=  xs=(list [gp=group-path:md cp=app-path:md])
   ^-  group-summaries
-  =/  xs=(list [gp=group-path:md cp=app-path:md])
-    my-group-chats
   =|  gs=group-summaries
   |-
   ?~  xs  gs
   =/  rid=resource
     (de-path:resource gp.i.xs)
-  =*  chat-path  cp.i.xs
-  =/  m=(unit mailbox:store)
-    (scry-mailbox chat-path)
-  ?~  m  $(xs t.xs)
   =/  g=(unit group:group)
     (scry-group:grp rid)
   ?~  g  $(xs t.xs)
@@ -120,6 +156,9 @@
     (snoc `path`pax %noun)
   ==
 ++  calc-stats
+::  takes stats and chat-path
+::  loops through keys of stats
+::  pulls chat/user from chat-cache and calculates attributes
   |=  [stats=(map ship user-summary) es=(list envelope:store)]
   |-  ^-  (map ship user-summary)
   ?~  es  stats
