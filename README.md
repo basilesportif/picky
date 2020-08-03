@@ -1,3 +1,5 @@
+**warning** `%picky` is in active development; don't use on real ships yet
+
 # picky
 See who is active or not in your chats. Keep control of your groups as Urbit expands.
 
