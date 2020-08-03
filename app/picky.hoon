@@ -52,7 +52,7 @@
     ^-  (quip card _state)
     ?-    -.action
         %load-chats
-      ~&  >>  groups-summary:hc
+      ~&  >>  (~(get by all-my-groups:hc) [~bacdul-timzod %dm--timluc-miptev])
       `state
       ::
         %dummy
@@ -69,7 +69,7 @@
 --
 |_  =bowl:gall
 +*  grp  ~(. group-lib bowl)
-++  groups-summary
+++  all-my-groups
   ^-  group-summaries
   =/  xs=(list [gp=group-path:md cp=app-path:md])
     my-group-chats
@@ -121,8 +121,7 @@
   ==
 ++  calc-stats
   |=  [stats=(map ship user-summary) es=(list envelope:store)]
-  ^-  (map ship user-summary)
-  |-
+  |-  ^-  (map ship user-summary)
   ?~  es  stats
   ?.  (~(has by stats) author.i.es)
     $(es t.es)
@@ -133,13 +132,31 @@
   =.  stats
     %+  ~(put by stats)
       author.i.es
-    :*  ?:((after-date ~d7 when.i.es) +(num-week.us) num-week.us)
+    :*  (insert-envelope msgs.us i.es)
+        ?:((after-date ~d7 when.i.es) +(num-week.us) num-week.us)
         +(num-month.us)
     ==
   $(es t.es)
 ++  after-date
   |=  [interval=@dr d=@da]
   (gte d (sub now.bowl interval))
+::  inserts envelope to list, newest first
+::
+++  insert-envelope
+  |=  [es=(list envelope:store) e=envelope:store]
+  ^-  (list envelope:store)
+  =/  idx=(unit @)  (find-older e es)
+  ?~  idx
+    (snoc es e)
+  (into es u.idx e)
+++  find-older
+ |=  [nedl=envelope:store hstk=(list envelope:store)]
+ =|  idx=@
+ |-  ^-  (unit @)
+ ?~  hstk  ~
+ ?:  (gte when.nedl when.i.hstk)
+   `idx
+ $(idx +(idx), hstk t.hstk)
 ++  is-my-group
   |=  gp=group-path:md
   ?&
