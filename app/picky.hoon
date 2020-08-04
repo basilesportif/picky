@@ -65,11 +65,12 @@
     ^-  (quip card _state)
     ?-    -.action
         %load-chats
-      =.  chat-cache.state  (update-cache:hc my-groups-chats:hc)
+      =.  chat-cache.state  (update-chat-cache:hc my-groups-chats:hc)
       [subscribe-chat-updates:hc state]
       ::
         %dummy
-      =^  msgs=(list msg)  state
+      =.  state  load-group-summaries
+      =/  msgs=(list msg)
         (user-group-msgs:hc ~timluc-miptev [~bitbet-bolbel %urbit-community] 10)
       ~&  >>  msgs
       `state
@@ -117,23 +118,21 @@
         |=([=wire *] ?=([%chat-store-updates ~] wire))
     ~
   ~[[%pass /chat-store-updates %agent [our.bowl %chat-store] %watch /updates]]
-::  returns state in case gs-cache updates
+::  need to update gs-cache before calling
 ::
 ++  user-group-msgs
   |=  [user=ship group-rid=resource num-msgs=@]
-  ^-  [(list msg) _state]
-  =.  gs-cache.state
-    [now.bowl ttl=ttl.gs-cache.state load-group-summaries]
+  ^-  (list msg)
   =/  gs=(unit group-summary)
     (~(get by gs.gs-cache.state) group-rid)
-  ?~  gs  `state
+  ?~  gs  ~
   ~&  >>>  ~(tap in chats.u.gs)
   =|  acc=(list msg)
   |-
-  ?:  =(0 num-msgs)  [(flop acc) state]
+  ?:  =(0 num-msgs)  (flop acc)
   =^  m=(unit msg)  chat-cache.state
     (pop-newest-msg ~(tap in chats.u.gs) user chat-cache.state)
-  ?~  m  [(flop acc) state]
+  ?~  m  (flop acc)
   $(acc [u.m acc], num-msgs (dec num-msgs))
 ::  pops the newest msg in all chats; returns updated chat-cache
 ::
@@ -160,7 +159,7 @@
   `[cp i.e]
 ::
 ::
-++  update-cache
+++  update-chat-cache
   |=  xs=(list [gp=group-path:md chat-path=app-path:md])
   =*  ccs  chat-cache.state
   |-  ^-  ^chat-cache
@@ -191,13 +190,13 @@
   $(es t.es)
 ::
 ::
-::  returns group-summaries from cache if valid, re-computed if not
+::  recomputes group-summaries cache if invalid
 ::
 ++  load-group-summaries
-  ^-  group-summaries
+  ^-  _state
   ?:  (gte (add updated.gs-cache.state ttl.gs-cache.state) now.bowl)
-    gs.gs-cache.state
-  (summarize-groups my-groups-chats)
+    state
+  state(gs-cache [now.bowl ttl.gs-cache.state (summarize-groups my-groups-chats)])
 ++  summarize-groups
   ~&  >>  "summarize-groups"
   |=  xs=(list [gp=group-path:md chat-path=app-path:md])
