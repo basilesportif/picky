@@ -106,13 +106,52 @@
 ::
 |_  =bowl:gall
 +*  grp  ~(. group-lib bowl)
-::  subscribes to chat updates if we're not subscribed
 ++  subscribe-chat-updates
   ^-  (list card)
   ?:  %-  ~(any in `(set [wire ship term])`~(key by wex.bowl))
         |=([=wire *] ?=([%chat-store-updates ~] wire))
     ~
   ~[[%pass /chat-store-updates %agent [our.bowl %chat-store] %watch /updates]]
+++  user-group-msgs
+  |=  [user=ship group-rid=resource num-msgs=@]
+  ^-  (list msg)
+  =/  gs=(unit group-summary)
+    %-  ~(get by (summarize-groups my-groups-chats))
+      group-rid
+  ?~  gs  ~
+  ~&  >>>  ~(tap in chats.u.gs)
+  =|  acc=(list msg)
+  |-
+  ?:  =(0 num-msgs)  (flop acc)
+  =^  m=(unit msg)  chat-cache.state
+    (pop-newest-msg ~(tap in chats.u.gs) user chat-cache.state)
+  ?~  m  (flop acc)
+  $(acc [u.m acc], num-msgs (dec num-msgs))
+::  pops the newest msg in all chats; returns updated chat-cache
+::
+++  pop-newest-msg
+  |=  [chats=(list path) user=ship cc=^chat-cache]
+  ^-  [(unit msg) _cc]
+  =/  ms=(list msg)
+    %+  murn  chats
+    |=(cp=path (first-msg cp user cc))
+  =/  sorted=(list msg)
+    (sort ms |=([m1=msg m2=msg] (gte when.e.m1 when.e.m2)))
+  ?~  sorted  [~ cc]
+  =*  k  [chat-path.i.sorted user]
+  =.  cc
+    %+  ~(put by cc)  k
+    (slag 1 (~(gut by cc) k ~))
+  [`i.sorted cc]
+++  first-msg
+  |=  [cp=path user=ship cc=^chat-cache]
+  ^-  (unit msg)
+  =/  e=(list envelope.store)
+    (~(gut by cc) [cp user] ~)
+  ?~  e  ~
+  `[cp i.e]
+::
+::
 ++  update-cache
   |=  xs=(list [gp=group-path:md chat-path=app-path:md])
   =*  ccs  chat-cache.state
