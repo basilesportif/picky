@@ -13,8 +13,7 @@
       stats=(map ship user-summary)
   ==
 +$  user-summary
-  $:  msgs=(list envelope:store)
-      num-week=@
-      num-month=@
+   $:  num-week=@
+       num-month=@
   ==
 --

@@ -61,10 +61,10 @@
     ?-    -.action
         %load-chats
       =/  mgc  my-groups-chats:hc
+      =/  summary  (summarize-groups:hc mgc)
+::      ~&  >>>  summary
       =.  chat-cache.state  (update-cache:hc mgc)
-      ::  TODO: run summarize and...do something with it?
-      :_  state
-      ~[[%pass /chat-store-updates %agent [our.bowl %chat-store] %watch /updates]]
+      [subscribe-chat-updates:hc state]
       ::
         %dummy
       `state
@@ -79,17 +79,27 @@
 ++  on-arvo   on-arvo:def
 ++  on-fail   on-fail:def
 --
+::
+::  HELPER CORE
+::
 |_  =bowl:gall
 +*  grp  ~(. group-lib bowl)
+::  subscribes to chat updates if we're not subscribed
+++  subscribe-chat-updates
+  ^-  (list card)
+  ?:  %-  ~(any in `(set [wire ship term])`~(key by wex.bowl))
+        |=([=wire *] ?=([%chat-store-updates ~] wire))
+    ~
+  ~[[%pass /chat-store-updates %agent [our.bowl %chat-store] %watch /updates]]
 ++  update-cache
-  |=  xs=(list [gp=group-path:md cp=app-path:md])
+  |=  xs=(list [gp=group-path:md chat-path=app-path:md])
   =*  ccs  chat-cache.state
   |-  ^-  ^chat-cache
   ?~  xs  ccs
   =/  m=(unit mailbox:store)
-    (scry-mailbox cp)
+    (scry-mailbox chat-path.i.xs)
   ?~  m  $(xs t.xs)
-  $(xs t.xs, ccs (cache-mailbox cp u.m))
+  $(xs t.xs, ccs (cache-mailbox chat-path.i.xs u.m))
 ::  caches a chat-store if it's uncached
 ::
 ++  cache-mailbox
@@ -110,8 +120,11 @@
       [chat-path author.i.es]
     [i.es user-msgs]
   $(es t.es)
-++  summarize
-  |=  xs=(list [gp=group-path:md cp=app-path:md])
+::
+::
+++  summarize-groups
+  ~&  >>  "summarize-groups"
+  |=  xs=(list [gp=group-path:md chat-path=app-path:md])
   ^-  group-summaries
   =|  gs=group-summaries
   |-
@@ -121,15 +134,15 @@
   =/  g=(unit group:group)
     (scry-group:grp rid)
   ?~  g  $(xs t.xs)
-  =/  =group-summary
+  =/  gsum=group-summary
     ?:  (~(has by gs) rid)
       (~(got by gs) rid)
     (init-group-summary u.g)
-  =.  chats.group-summary
-    (~(put in chats.group-summary) chat-path)
-  =.  stats.group-summary
-    (calc-stats stats.group-summary envelopes.u.m)
-  $(xs t.xs, gs (~(put by gs) rid group-summary))
+  =.  chats.gsum
+    (~(put in chats.gsum) chat-path.i.xs)
+  =.  stats.gsum
+    (calc-stats stats.gsum chat-path.i.xs)
+  $(xs t.xs, gs (~(put by gs) rid gsum))
 ++  init-group-summary
   |=  [g=group:group]
   ^-  group-summary
@@ -144,65 +157,43 @@
   =/  admins=(set ship)
     (~(gut by tags.g) %admin *(set ship))
   (~(uni in admins) members.g)
-++  scry-mailbox
-  |=  pax=path
-  .^
-    (unit mailbox:store)
-    %gx
-    (scot %p our.bowl)
-    %chat-store
-    (scot %da now.bowl)
-    %mailbox
-    (snoc `path`pax %noun)
-  ==
 ++  calc-stats
-::  takes stats and chat-path
-::  loops through keys of stats
-::  pulls chat/user from chat-cache and calculates attributes
-  |=  [stats=(map ship user-summary) es=(list envelope:store)]
-  |-  ^-  (map ship user-summary)
-  ?~  es  stats
-  ?.  (~(has by stats) author.i.es)
-    $(es t.es)
-  ?.  (after-date ~d30 when.i.es)
-    stats
+  |=  [stats=(map ship user-summary) chat-path=path]
+  =/  num-msgs=@  10
+  =/  users=(list ship)
+    ~(tap in ~(key by stats))
+  |-  ^+  stats
+  ?~  users  stats
   =/  us=user-summary
-    (~(got by stats) author.i.es)
+    (~(got by stats) i.users)
+  =/  es=(list envelope:store)
+    (~(gut by chat-cache) [chat-path i.users] ~)
   =.  stats
-    %+  ~(put by stats)
-      author.i.es
-    :*  (insert-envelope msgs.us i.es)
-        ?:((after-date ~d7 when.i.es) +(num-week.us) num-week.us)
+    %+  ~(put by stats)  i.users
+    (update-user-summary us es)
+  $(users t.users)
+++  update-user-summary
+  |=  [us=user-summary msgs=(list envelope:store)]
+  |-  ^-  user-summary
+  ?~  msgs  us
+  ?.  (after-date ~d30 when.i.msgs)  us
+  =.  us
+    :*  ?:((after-date ~d7 when.i.msgs) +(num-week.us) num-week.us)
         +(num-month.us)
     ==
-  $(es t.es)
+  $(msgs t.msgs)
 ++  after-date
   |=  [interval=@dr d=@da]
   (gte d (sub now.bowl interval))
-::  inserts envelope to list, newest first
 ::
-++  insert-envelope
-  |=  [es=(list envelope:store) e=envelope:store]
-  ^-  (list envelope:store)
-  =/  idx=(unit @)  (find-older e es)
-  ?~  idx
-    (snoc es e)
-  (into es u.idx e)
-++  find-older
- |=  [nedl=envelope:store hstk=(list envelope:store)]
- =|  idx=@
- |-  ^-  (unit @)
- ?~  hstk  ~
- ?:  (gte when.nedl when.i.hstk)
-   `idx
- $(idx +(idx), hstk t.hstk)
+::
 ++  is-my-group
   |=  gp=group-path:md
   ?&
     ?=([%ship @ @ ~] gp)
     =(i.t.gp (scot %p our.bowl))
   ==
-++  my-group-chats
+++  my-groups-chats
   ^-  (list [group-path:md app-path:md])
   =/  xs=(list [group-path:md app-path:md])
     %~  tap  in
@@ -218,4 +209,15 @@
     (~(gut by ai) %chat *(set [group-path:md app-path:md]))
   %+  skim  xs
   |=([g=group-path:md *] (is-my-group g))
+++  scry-mailbox
+  |=  pax=path
+  .^
+    (unit mailbox:store)
+    %gx
+    (scot %p our.bowl)
+    %chat-store
+    (scot %da now.bowl)
+    %mailbox
+    (snoc `path`pax %noun)
+  ==
 --
