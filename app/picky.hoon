@@ -54,6 +54,9 @@
   |=  [=mark =vase]
   ^-  (quip card _this)
   |^
+  ::  refresh group-summaries cache on every request
+  ::
+  =.  state  load-group-summaries
   =^  cards  state
   ?+    mark  (on-poke:def mark vase)
       %picky-action
@@ -69,7 +72,6 @@
       [subscribe-chat-updates:hc state]
       ::
         %dummy
-      =.  state  load-group-summaries
       =/  msgs=(list msg)
         (user-group-msgs:hc ~timluc-miptev [~bitbet-bolbel %urbit-community] 10)
       ~&  >>  msgs
