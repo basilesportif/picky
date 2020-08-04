@@ -71,7 +71,7 @@
     ?-    -.action
         %user-msgs
       =/  msgs=(list msg)
-        (user-group-msgs:hc ~timluc-miptev [~bitbet-bolbel %urbit-community] 10)
+        (user-group-msgs:hc ~timluc-miptev [~timluc-miptev %the-collapse] 10)
       ~&  >>  msgs
       `state
       ::
@@ -129,7 +129,6 @@
   =/  gs=(unit group-summary)
     (~(get by gs.gs-cache.state) group-rid)
   ?~  gs  ~
-  ~&  >>>  ~(tap in chats.u.gs)
   =|  acc=(list msg)
   |-
   ?:  =(0 num-msgs)  (flop acc)
@@ -273,11 +272,16 @@
 ::
 ++  is-my-group
   |=  gp=group-path:md
-::  ?:  %.y  %.y
-  ?&
-    ?=([%ship @ @ ~] gp)
-    =(i.t.gp (scot %p our.bowl))
-  ==
+  =/  rid=resource
+    (de-path:resource gp)
+  ?:  =(entity.rid our.bowl)
+    %.y
+  =/  g=(unit group:group)
+    (scry-group:grp rid)
+  ?~  g  %.n
+  =/  admins=(set ship)
+    (~(gut by tags.u.g) %admin *(set ship))
+  (~(has in admins) our.bowl)
 ++  my-groups-chats
   ^-  (list [group-path:md app-path:md])
   =/  xs=(list [group-path:md app-path:md])
