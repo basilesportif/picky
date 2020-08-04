@@ -18,6 +18,6 @@
 
 ## picky actions
 ```
-:picky &picky-action [%load-chats ~]
+:picky &picky-action [%user-msgs ~]
 :picky &picky-action [%dummy ~]
 ```

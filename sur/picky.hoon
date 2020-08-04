@@ -1,7 +1,7 @@
 /-  *resource, store=chat-store
 |%
 +$  action
-  $%  [%load-chats ~]
+  $%  [%user-msgs ~]
       [%dummy ~]
   ==
 :: all messages for a user in a chat, newest first

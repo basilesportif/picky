@@ -32,7 +32,8 @@
 ++  on-init
   ^-  (quip card _this)
   ~&  >  '%picky initialized successfully'
-  `this(state [%2 *^chat-cache [*time ~m10 *group-summaries]])
+  :-  subscribe-chat-updates:hc
+  this(state [%2 *^chat-cache [*time ~m10 *group-summaries]])
 ++  on-save
   ^-  vase
   !>(state)
@@ -48,7 +49,8 @@
     `this(state [%2 chat-cache.old [*time ~m10 *group-summaries]])
     ::
       %0
-    `this(state [%2 *^chat-cache [*time ~m10 *group-summaries]])
+    :-  subscribe-chat-updates:hc
+    this(state [%2 *^chat-cache [*time ~m10 *group-summaries]])
   ==
 ++  on-poke
   |=  [=mark =vase]
@@ -56,7 +58,7 @@
   |^
   ::  refresh group-summaries cache on every request
   ::
-  =.  state  load-group-summaries
+  =.  state  load-group-summaries:hc
   =^  cards  state
   ?+    mark  (on-poke:def mark vase)
       %picky-action
@@ -67,14 +69,13 @@
     |=  =action
     ^-  (quip card _state)
     ?-    -.action
-        %load-chats
-      =.  chat-cache.state  (update-chat-cache:hc my-groups-chats:hc)
-      [subscribe-chat-updates:hc state]
-      ::
-        %dummy
+        %user-msgs
       =/  msgs=(list msg)
         (user-group-msgs:hc ~timluc-miptev [~bitbet-bolbel %urbit-community] 10)
       ~&  >>  msgs
+      `state
+      ::
+        %dummy
       `state
     ==
   --
@@ -193,14 +194,20 @@
 ::
 ::
 ::  recomputes group-summaries cache if invalid
+::  also refreshes chat-cache if gs-cache invalid
 ::
 ++  load-group-summaries
   ^-  _state
   ?:  (gte (add updated.gs-cache.state ttl.gs-cache.state) now.bowl)
     state
-  state(gs-cache [now.bowl ttl.gs-cache.state (summarize-groups my-groups-chats)])
+  =/  mgc  my-groups-chats
+  =.  chat-cache.state  (update-chat-cache mgc)
+  =.  gs-cache.state  [now.bowl ttl.gs-cache.state (summarize-groups mgc)]
+  state
+::  do NOT call this directly; use load-group-summaries to get caching
+::
 ++  summarize-groups
-  ~&  >>  "summarize-groups"
+  ~&  >>  "summarize-groups "
   |=  xs=(list [gp=group-path:md chat-path=app-path:md])
   ^-  group-summaries
   =|  gs=group-summaries
