@@ -65,13 +65,13 @@
     ^-  (quip card _state)
     ?-    -.action
         %load-chats
-      =/  mgc  my-groups-chats:hc
-      =/  summary  (summarize-groups:hc mgc)
-::      ~&  >>>  summary
-      =.  chat-cache.state  (update-cache:hc mgc)
+      =.  chat-cache.state  (update-cache:hc my-groups-chats:hc)
       [subscribe-chat-updates:hc state]
       ::
         %dummy
+      =^  msgs=(list msg)  state
+        (user-group-msgs:hc ~timluc-miptev [~bitbet-bolbel %urbit-community] 10)
+      ~&  >>  msgs
       `state
     ==
   --
@@ -117,20 +117,23 @@
         |=([=wire *] ?=([%chat-store-updates ~] wire))
     ~
   ~[[%pass /chat-store-updates %agent [our.bowl %chat-store] %watch /updates]]
+::  returns state in case gs-cache updates
+::
 ++  user-group-msgs
   |=  [user=ship group-rid=resource num-msgs=@]
-  ^-  (list msg)
+  ^-  [(list msg) _state]
+  =.  gs-cache.state
+    [now.bowl ttl=ttl.gs-cache.state load-group-summaries]
   =/  gs=(unit group-summary)
-    %-  ~(get by (summarize-groups my-groups-chats))
-      group-rid
-  ?~  gs  ~
+    (~(get by gs.gs-cache.state) group-rid)
+  ?~  gs  `state
   ~&  >>>  ~(tap in chats.u.gs)
   =|  acc=(list msg)
   |-
-  ?:  =(0 num-msgs)  (flop acc)
+  ?:  =(0 num-msgs)  [(flop acc) state]
   =^  m=(unit msg)  chat-cache.state
     (pop-newest-msg ~(tap in chats.u.gs) user chat-cache.state)
-  ?~  m  (flop acc)
+  ?~  m  [(flop acc) state]
   $(acc [u.m acc], num-msgs (dec num-msgs))
 ::  pops the newest msg in all chats; returns updated chat-cache
 ::
@@ -188,11 +191,13 @@
   $(es t.es)
 ::
 ::
-::++  load-group-summaries
-::  |=  my-groups-chats=(list [gp=group-path:md chat-path=app-path:md])
-::      ==
-  ::  if cache + cache-ttl > now.bowl, run summarize-groups
-  ::  otherwise return the group-cache
+::  returns group-summaries from cache if valid, re-computed if not
+::
+++  load-group-summaries
+  ^-  group-summaries
+  ?:  (gte (add updated.gs-cache.state ttl.gs-cache.state) now.bowl)
+    gs.gs-cache.state
+  (summarize-groups my-groups-chats)
 ++  summarize-groups
   ~&  >>  "summarize-groups"
   |=  xs=(list [gp=group-path:md chat-path=app-path:md])
@@ -260,6 +265,7 @@
 ::
 ++  is-my-group
   |=  gp=group-path:md
+::  ?:  %.y  %.y
   ?&
     ?=([%ship @ @ ~] gp)
     =(i.t.gp (scot %p our.bowl))
