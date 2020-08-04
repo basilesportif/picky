@@ -70,12 +70,34 @@
       `state
     ==
   --
+++  on-agent
+  |=  [=wire =sign:agent:gall]
+  |^  ^-  (quip card _this)
+  ?+    -.sign  (on-agent:def wire sign)
+      %fact
+    ?+    p.cage.sign  (on-agent:def wire sign)
+        %chat-update
+      (handle-chat-update !<(update:store q.cage.sign))
+    ==
+  ==
+  ++  handle-chat-update
+    |=  =update:store
+    ^-  (quip card _this)
+    =*  ccs  chat-cache.state
+    ?.  ?=([%message * *] update)
+      `this
+    =*  k  [path.update author.envelope.update]
+    ?.  (~(has by ccs) k)
+      `this
+    =/  msgs=(list envelope:store)
+      (~(got by ccs) k)
+    =.  ccs  (~(put by ccs) k [envelope.update msgs])
+    `this
+  --
 ::
 ++  on-watch  on-watch:def
 ++  on-leave  on-leave:def
 ++  on-peek   on-peek:def
-++  on-agent  on-agent:def
-::  TODO: handle chat updates
 ++  on-arvo   on-arvo:def
 ++  on-fail   on-fail:def
 --
