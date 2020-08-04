@@ -1,8 +1,10 @@
 /-  *resource, store=chat-store
 |%
 +$  action
-  $%  [%user-msgs ~]
-      [%dummy ~]
+  $%  [%messages user=ship rid=resource num-msgs=@]
+      [%group-summary rid=resource]
+      [%all-groups ~]
+      [%alter-cache-ttl ttl=@dr]
   ==
 :: all messages for a user in a chat, newest first
 ::

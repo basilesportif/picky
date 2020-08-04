@@ -17,6 +17,8 @@
 
 ## picky actions
 ```
-:picky &picky-action [%user-msgs ~]
-:picky &picky-action [%dummy ~]
+:picky &picky-action [%messages ~timluc-miptev [~timluc-miptev %the-collapse] 5]
+:picky &picky-action [%group-summary [~timluc-miptev %the-collapse]]
+:picky &picky-action [%all-groups ~]
+:picky &picky-action [%alter-cache-ttl ~m1]
 ```

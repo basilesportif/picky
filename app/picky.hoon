@@ -69,14 +69,21 @@
     |=  =action
     ^-  (quip card _state)
     ?-    -.action
-        %user-msgs
+        %messages
       =/  msgs=(list msg)
-        (user-group-msgs:hc ~timluc-miptev [~timluc-miptev %the-collapse] 10)
+        (user-group-msgs:hc +.action)
       ~&  >>  msgs
       `state
       ::
-        %dummy
+        %group-summary
+      ~&  >>  (~(get by gs.gs-cache.state) rid.action)
       `state
+      ::
+        %all-groups
+      ~&  >>  gs.gs-cache.state
+      `state
+        %alter-cache-ttl
+      `state(ttl.gs-cache ttl.action)
     ==
   --
 ++  on-agent
@@ -121,7 +128,7 @@
         |=([=wire *] ?=([%chat-store-updates ~] wire))
     ~
   ~[[%pass /chat-store-updates %agent [our.bowl %chat-store] %watch /updates]]
-::  need to update gs-cache before calling
+::  uses gs-cache in state, regardless of staleness
 ::
 ++  user-group-msgs
   |=  [user=ship group-rid=resource num-msgs=@]
