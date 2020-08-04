@@ -3,6 +3,7 @@
 ```
 :picky +dbug [%state '(~(get by chat-cache) [/~nibset-napwyn/design-3639 ~timluc-miptev])']
 
+:picky +dbug [%state 'gs-cache']
 ```
 
 ## debug prints

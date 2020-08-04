@@ -7,18 +7,20 @@
 +$  versioned-state
     $%  state-0
         state-1
+        state-2
     ==
 ::
 +$  state-0
     $:  [%0 counter=@]
     ==
 +$  state-1  [%1 =chat-cache]
++$  state-2  [%2 =chat-cache =gs-cache]
 ::
 +$  card  card:agent:gall
 ::
 --
 %-  agent:dbug
-=|  state-1
+=|  state-2
 =*  state  -
 ^-  agent:gall
 =<
@@ -30,7 +32,7 @@
 ++  on-init
   ^-  (quip card _this)
   ~&  >  '%picky initialized successfully'
-  `this
+  `this(state [%2 *^chat-cache [*time ~m10 *group-summaries]])
 ++  on-save
   ^-  vase
   !>(state)
@@ -40,10 +42,13 @@
   ^-  (quip card _this)
   =/  old  !<(versioned-state old-state)
   ?-  -.old
-      %1  `this(state old)
+      %2  `this(state old)
+    ::
+      %1
+    `this(state [%2 chat-cache.old [*time ~m10 *group-summaries]])
     ::
       %0
-    `this(state [%1 *^chat-cache])
+    `this(state [%2 *^chat-cache [*time ~m10 *group-summaries]])
   ==
 ++  on-poke
   |=  [=mark =vase]
@@ -183,6 +188,11 @@
   $(es t.es)
 ::
 ::
+::++  load-group-summaries
+::  |=  my-groups-chats=(list [gp=group-path:md chat-path=app-path:md])
+::      ==
+  ::  if cache + cache-ttl > now.bowl, run summarize-groups
+  ::  otherwise return the group-cache
 ++  summarize-groups
   ~&  >>  "summarize-groups"
   |=  xs=(list [gp=group-path:md chat-path=app-path:md])

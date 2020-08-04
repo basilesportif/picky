@@ -7,6 +7,7 @@
 :: all messages for a user in a chat, newest first
 ::
 +$  chat-cache  (map [path ship] (list envelope:store))
++$  gs-cache  [updated=time ttl=@dr gs=group-summaries]
 ::  envelope marked with chat path
 ::
 +$  msg  [chat-path=path e=envelope:store]
