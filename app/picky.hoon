@@ -14,7 +14,9 @@
     $:  [%0 counter=@]
     ==
 +$  state-1  [%1 =chat-cache]
-+$  state-2  [%2 =chat-cache =gs-cache]
+::  record banned users since private groups don't record this
+::
++$  state-2  [%2 banned=(set ship) =chat-cache =gs-cache]
 ::
 +$  card  card:agent:gall
 ++  init-gs-cache  [*time ~m10 *group-summaries]
@@ -34,7 +36,7 @@
   ^-  (quip card _this)
   ~&  >  '%picky initialized successfully'
   :-  subscribe-chat-updates:hc
-  this(state [%2 *^chat-cache init-gs-cache])
+  this(state [%2 *(set ship) *^chat-cache init-gs-cache])
 ++  on-save
   ^-  vase
   !>(state)
@@ -47,11 +49,11 @@
       %2  `this(state old)
     ::
       %1
-    `this(state [%2 chat-cache.old init-gs-cache])
+    `this(state [%2 *(set ship) chat-cache.old init-gs-cache])
     ::
       %0
     :-  subscribe-chat-updates:hc
-    this(state [%2 *^chat-cache init-gs-cache])
+    this(state [%2 *(set ship) *^chat-cache init-gs-cache])
   ==
 ++  on-poke
   |=  [=mark =vase]
@@ -83,8 +85,13 @@
         %all-groups
       ~&  >>  gs.gs-cache.state
       `state
+      ::
         %alter-cache-ttl
       `state(ttl.gs-cache ttl.action)
+      ::
+        %ban
+      ~&  >>  user.action
+      `state(banned (~(put in banned.state) user.action))
     ==
   --
 ++  on-agent
@@ -144,7 +151,7 @@
     (pop-newest-msg ~(tap in chats.u.gs) user chat-cache.state)
   ?~  m  (flop acc)
   $(acc [u.m acc], num-msgs (dec num-msgs))
-::  pops the newest msg in all chats; returns updated chat-cache
+::  pops the newest msg for user in list of chats; returns updated chat-cache
 ::
 ++  pop-newest-msg
   |=  [chats=(list path) user=ship cc=^chat-cache]
@@ -200,8 +207,7 @@
   $(es t.es)
 ::
 ::
-::  recomputes group-summaries cache if invalid
-::  also refreshes chat-cache if gs-cache invalid
+::  recomputes group-summaries and chat-cache if gs-cache expired
 ::
 ++  load-group-summaries
   ^-  _state

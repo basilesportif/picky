@@ -5,6 +5,7 @@
       [%group-summary rid=resource]
       [%all-groups ~]
       [%alter-cache-ttl ttl=@dr]
+      [%ban user=ship] 
   ==
 :: all messages for a user in a chat, newest first
 ::
