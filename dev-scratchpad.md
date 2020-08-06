@@ -1,17 +1,24 @@
  
 ## dbug queries
 ```
-:picky +dbug [%state '(~(get by chat-cache) [/~nibset-napwyn/design-3639 ~timluc-miptev])']
+:picky +dbug [%state '(~(get by chat-cache) [/~timluc-miptev/the-collapse ~timluc-miptev])']
 
+:picky +dbug [%state 'gs-cache']
+:picky +dbug [%state 'ttl.gs-cache']
+:picky +dbug [%state 'updated.gs-cache']
+
+:picky +dbug [%state '~(get by gs-cache')]
 ```
 
 ## debug prints
 ```
-::  to do this one, set "my groups" to be everything
-~&  >>  (user-group-msgs:hc ~timluc-miptev [~bitbet-bolbel %urbit-community] 10)
+~&  >>  (user-group-msgs:hc ~timluc-miptev [~timluc-miptev %the-collapse] 10)
 ```
 
 ## picky actions
 ```
-:picky &picky-action [%load-chats ~]
+:picky &picky-action [%messages ~timluc-miptev [~timluc-miptev %the-collapse] 5]
+:picky &picky-action [%group-summary [~timluc-miptev %the-collapse]]
+:picky &picky-action [%all-groups ~]
+:picky &picky-action [%alter-cache-ttl ~m1]
 ```

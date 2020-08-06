@@ -1,4 +1,5 @@
 **warning** `%picky` is in active development; don't use on real ships yet
+If you want to see its power, I recommend firing it up on an `-L` ship where you are a group owner or admin, and then poking it with `%group-summary` or `%messages`.
 
 # picky
 See who is active or not in your chats. Keep control of your groups as Urbit expands.
@@ -6,7 +7,7 @@ See who is active or not in your chats. Keep control of your groups as Urbit exp
 In addition to being useful, `%picky` shows lots of examples of how to use already-available Urbit ship data to craft custom group/user experiences.
 
 ## Installation
-* make sure your `home` is mounted (`|mount %`)
+* make sure your `home` is mounted (`|mount %`) 
 
 *THEN*
 * run `./install.sh $PIER_DIR`

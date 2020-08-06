@@ -7,18 +7,20 @@
 +$  versioned-state
     $%  state-0
         state-1
+        state-2
     ==
 ::
 +$  state-0
     $:  [%0 counter=@]
     ==
 +$  state-1  [%1 =chat-cache]
++$  state-2  [%2 =chat-cache =gs-cache]
 ::
 +$  card  card:agent:gall
 ::
 --
 %-  agent:dbug
-=|  state-1
+=|  state-2
 =*  state  -
 ^-  agent:gall
 =<
@@ -30,7 +32,8 @@
 ++  on-init
   ^-  (quip card _this)
   ~&  >  '%picky initialized successfully'
-  `this
+  :-  subscribe-chat-updates:hc
+  this(state [%2 *^chat-cache [*time ~m10 *group-summaries]])
 ++  on-save
   ^-  vase
   !>(state)
@@ -40,15 +43,22 @@
   ^-  (quip card _this)
   =/  old  !<(versioned-state old-state)
   ?-  -.old
-      %1  `this(state old)
+      %2  `this(state old)
+    ::
+      %1
+    `this(state [%2 chat-cache.old [*time ~m10 *group-summaries]])
     ::
       %0
-    `this(state [%1 *^chat-cache])
+    :-  subscribe-chat-updates:hc
+    this(state [%2 *^chat-cache [*time ~m10 *group-summaries]])
   ==
 ++  on-poke
   |=  [=mark =vase]
   ^-  (quip card _this)
   |^
+  ::  refresh group-summaries cache on every request
+  ::
+  =.  state  load-group-summaries:hc
   =^  cards  state
   ?+    mark  (on-poke:def mark vase)
       %picky-action
@@ -59,15 +69,21 @@
     |=  =action
     ^-  (quip card _state)
     ?-    -.action
-        %load-chats
-      =/  mgc  my-groups-chats:hc
-      =/  summary  (summarize-groups:hc mgc)
-::      ~&  >>>  summary
-      =.  chat-cache.state  (update-cache:hc mgc)
-      [subscribe-chat-updates:hc state]
-      ::
-        %dummy
+        %messages
+      =/  msgs=(list msg)
+        (user-group-msgs:hc +.action)
+      ~&  >>  msgs
       `state
+      ::
+        %group-summary
+      ~&  >>  (~(get by gs.gs-cache.state) rid.action)
+      `state
+      ::
+        %all-groups
+      ~&  >>  gs.gs-cache.state
+      `state
+        %alter-cache-ttl
+      `state(ttl.gs-cache ttl.action)
     ==
   --
 ++  on-agent
@@ -112,14 +128,14 @@
         |=([=wire *] ?=([%chat-store-updates ~] wire))
     ~
   ~[[%pass /chat-store-updates %agent [our.bowl %chat-store] %watch /updates]]
+::  uses gs-cache in state, regardless of staleness
+::
 ++  user-group-msgs
   |=  [user=ship group-rid=resource num-msgs=@]
   ^-  (list msg)
   =/  gs=(unit group-summary)
-    %-  ~(get by (summarize-groups my-groups-chats))
-      group-rid
+    (~(get by gs.gs-cache.state) group-rid)
   ?~  gs  ~
-  ~&  >>>  ~(tap in chats.u.gs)
   =|  acc=(list msg)
   |-
   ?:  =(0 num-msgs)  (flop acc)
@@ -152,7 +168,7 @@
   `[cp i.e]
 ::
 ::
-++  update-cache
+++  update-chat-cache
   |=  xs=(list [gp=group-path:md chat-path=app-path:md])
   =*  ccs  chat-cache.state
   |-  ^-  ^chat-cache
@@ -183,8 +199,21 @@
   $(es t.es)
 ::
 ::
+::  recomputes group-summaries cache if invalid
+::  also refreshes chat-cache if gs-cache invalid
+::
+++  load-group-summaries
+  ^-  _state
+  ?:  (gte (add updated.gs-cache.state ttl.gs-cache.state) now.bowl)
+    state
+  =/  mgc  my-groups-chats
+  =.  chat-cache.state  (update-chat-cache mgc)
+  =.  gs-cache.state  [now.bowl ttl.gs-cache.state (summarize-groups mgc)]
+  state
+::  do NOT call this directly; use load-group-summaries to get caching
+::
 ++  summarize-groups
-  ~&  >>  "summarize-groups"
+  ~&  >>  "summarize-groups "
   |=  xs=(list [gp=group-path:md chat-path=app-path:md])
   ^-  group-summaries
   =|  gs=group-summaries
@@ -250,10 +279,16 @@
 ::
 ++  is-my-group
   |=  gp=group-path:md
-  ?&
-    ?=([%ship @ @ ~] gp)
-    =(i.t.gp (scot %p our.bowl))
-  ==
+  =/  rid=resource
+    (de-path:resource gp)
+  ?:  =(entity.rid our.bowl)
+    %.y
+  =/  g=(unit group:group)
+    (scry-group:grp rid)
+  ?~  g  %.n
+  =/  admins=(set ship)
+    (~(gut by tags.u.g) %admin *(set ship))
+  (~(has in admins) our.bowl)
 ++  my-groups-chats
   ^-  (list [group-path:md app-path:md])
   =/  xs=(list [group-path:md app-path:md])
