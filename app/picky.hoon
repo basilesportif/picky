@@ -17,6 +17,7 @@
 +$  state-2  [%2 =chat-cache =gs-cache]
 ::
 +$  card  card:agent:gall
+++  init-gs-cache  [*time ~m10 *group-summaries]
 ::
 --
 %-  agent:dbug
@@ -33,7 +34,7 @@
   ^-  (quip card _this)
   ~&  >  '%picky initialized successfully'
   :-  subscribe-chat-updates:hc
-  this(state [%2 *^chat-cache [*time ~m10 *group-summaries]])
+  this(state [%2 *^chat-cache init-gs-cache])
 ++  on-save
   ^-  vase
   !>(state)
@@ -46,11 +47,11 @@
       %2  `this(state old)
     ::
       %1
-    `this(state [%2 chat-cache.old [*time ~m10 *group-summaries]])
+    `this(state [%2 chat-cache.old init-gs-cache])
     ::
       %0
     :-  subscribe-chat-updates:hc
-    this(state [%2 *^chat-cache [*time ~m10 *group-summaries]])
+    this(state [%2 *^chat-cache init-gs-cache])
   ==
 ++  on-poke
   |=  [=mark =vase]
