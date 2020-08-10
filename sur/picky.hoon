@@ -5,10 +5,11 @@
       [%group-summary rid=resource]
       [%all-groups ~]
       [%alter-cache-ttl ttl=@dr]
-      [%ban user=ship] 
+      [%ban rid=resource user=ship] 
   ==
 :: all messages for a user in a chat, newest first
 ::
++$  banned  (jug resource ship)
 +$  chat-cache  (map [path ship] (list envelope:store))
 +$  gs-cache  [updated=time ttl=@dr gs=group-summaries]
 ::  envelope marked with chat path

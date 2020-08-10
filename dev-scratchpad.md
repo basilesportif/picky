@@ -6,6 +6,7 @@
 :picky +dbug [%state 'gs-cache']
 :picky +dbug [%state 'ttl.gs-cache']
 :picky +dbug [%state 'updated.gs-cache']
+:picky +dbug [%state 'banned']
 
 :picky +dbug [%state '~(get by gs-cache')]
 ```
@@ -21,4 +22,13 @@
 :picky &picky-action [%group-summary [~timluc-miptev %the-collapse]]
 :picky &picky-action [%all-groups ~]
 :picky &picky-action [%alter-cache-ttl ~m1]
+
+::  WORKS
+:picky &picky-action [%ban [~bacdul-timzod %dm--timluc-miptev] ~timluc-miptev]
+
+::  SHOULD GIVE A POKE ACK but doesn't
+:picky &picky-action [%ban [~timluc-miptev %dm--timluc-miptev] ~timluc-miptev]
 ```
+
+
+:group-push-hook &group-update [%remove-members [~timluc-miptev %dm--timluc-miptev] (sy ~[~timluc-miptev])]
