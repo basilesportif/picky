@@ -1,7 +1,7 @@
 ::  picky.hoon
 ::  chat admin dashboard backend
 ::
-/-  *picky, md=metadata-store, store=chat-store, group
+/-  *picky, md=metadata-store, store=chat-store, group, *resource
 /+  dbug, default-agent, group-lib=group, resource
 |%
 +$  versioned-state
@@ -16,7 +16,7 @@
 +$  state-1  [%1 =chat-cache]
 ::  record banned users since private groups don't record this
 ::
-+$  state-2  [%2 banned=(set ship) =chat-cache =gs-cache]
++$  state-2  [%2 =banned =chat-cache =gs-cache]
 ::
 +$  card  card:agent:gall
 ++  init-gs-cache  [*time ~m10 *group-summaries]
@@ -36,7 +36,7 @@
   ^-  (quip card _this)
   ~&  >  '%picky initialized successfully'
   :-  subscribe-chat-updates:hc
-  this(state [%2 *(set ship) *^chat-cache init-gs-cache])
+  this(state [%2 *^banned *^chat-cache init-gs-cache])
 ++  on-save
   ^-  vase
   !>(state)
@@ -49,11 +49,11 @@
       %2  `this(state old)
     ::
       %1
-    `this(state [%2 *(set ship) chat-cache.old init-gs-cache])
+    `this(state [%2 *^banned chat-cache.old init-gs-cache])
     ::
       %0
     :-  subscribe-chat-updates:hc
-    this(state [%2 *(set ship) *^chat-cache init-gs-cache])
+    this(state [%2 *^banned *^chat-cache init-gs-cache])
   ==
 ++  on-poke
   |=  [=mark =vase]
@@ -89,14 +89,36 @@
         %alter-cache-ttl
       `state(ttl.gs-cache ttl.action)
       ::
+      ::  actual banning happens when our poke is acked
+      ::
         %ban
-      ~&  >>  user.action
-      `state(banned (~(put in banned.state) user.action))
+      :_  state
+      ~[(ban-user rid.action user.action)]
+    ==
+  ++  ban-user
+    |=  [rid=resource user=ship]
+    :*
+      %pass
+      /ban-user/[(scot %p entity.rid)]/[name.rid]/[(scot %p user)]
+      %agent
+      [entity.rid %group-push-hook]
+      %poke
+      [%group-update !>([%remove-members rid (sy ~[user])])]
     ==
   --
 ++  on-agent
   |=  [=wire =sign:agent:gall]
   |^  ^-  (quip card _this)
+  ::  add user to our banned list on good group-push-hook ack
+  ::
+  ?:  ?&  ?=([%ban-user @ @ @ ~] wire)
+          ?=([%poke-ack ~] sign)
+      ==
+    =/  rid=resource
+      [(slav %p i.t.wire) i.t.t.wire]
+    =/  user=ship  (slav %p i.t.t.t.wire)
+    ~&  >>  "banned {<user>} from {<rid>}"
+    `this(banned.state (~(put ju banned.state) rid user))
   ?+    -.sign  (on-agent:def wire sign)
       %fact
     ?+    p.cage.sign  (on-agent:def wire sign)
@@ -139,7 +161,7 @@
 ::  uses gs-cache in state, regardless of staleness
 ::
 ++  user-group-msgs
-  |=  [user=ship group-rid=resource num-msgs=@]
+  |=  [group-rid=resource user=ship num-msgs=@]
   ^-  (list msg)
   =/  gs=(unit group-summary)
     (~(get by gs.gs-cache.state) group-rid)
