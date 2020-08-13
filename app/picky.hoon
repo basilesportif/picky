@@ -117,6 +117,7 @@
     =/  rid=resource
       [(slav %p i.t.wire) i.t.t.wire]
     =/  user=ship  (slav %p i.t.t.t.wire)
+    ~&  >>  "banned {<user>} from {<rid>}"
     `this(banned.state (~(put ju banned.state) rid user))
   ?+    -.sign  (on-agent:def wire sign)
       %fact
@@ -160,7 +161,7 @@
 ::  uses gs-cache in state, regardless of staleness
 ::
 ++  user-group-msgs
-  |=  [user=ship group-rid=resource num-msgs=@]
+  |=  [group-rid=resource user=ship num-msgs=@]
   ^-  (list msg)
   =/  gs=(unit group-summary)
     (~(get by gs.gs-cache.state) group-rid)

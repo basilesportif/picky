@@ -1,7 +1,7 @@
 /-  *resource, store=chat-store
 |%
 +$  action
-  $%  [%messages user=ship rid=resource num-msgs=@]
+  $%  [%messages rid=resource user=ship num-msgs=@]
       [%group-summary rid=resource]
       [%all-groups ~]
       [%alter-cache-ttl ttl=@dr]
