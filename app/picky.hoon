@@ -62,7 +62,7 @@
   |^
   ::  refresh group-summaries cache on every request
   ::
-  =.  state  load-group-summaries:hc
+  =.  state  (load-group-summaries:hc %.n)
   =^  cards  state
   ?+    mark  (on-poke:def mark vase)
       %picky-action
@@ -118,8 +118,7 @@
     =/  rid=resource
       [(slav %p i.t.wire) i.t.t.wire]
     =/  user=ship  (slav %p i.t.t.t.wire)
-    ~&  >>  "banned {<user>} from {<rid>}"
-    `this(banned.state (~(put ju banned.state) rid user))
+    (ban rid user)
   ?+    -.sign  (on-agent:def wire sign)
       %fact
     ?+    p.cage.sign  (on-agent:def wire sign)
@@ -127,6 +126,12 @@
       (handle-chat-update !<(update:store q.cage.sign))
     ==
   ==
+  ++  ban
+    |=  [rid=resource user=ship]
+    ^-  (quip card _this)
+    ~&  >>  "banned {<user>} from {<rid>}"
+    =.  banned.state  (~(put ju banned.state) rid user)
+    `this
   ++  handle-chat-update
     |=  =update:store
     ^-  (quip card _this)
@@ -233,8 +238,11 @@
 ::  recomputes group-summaries and chat-cache if gs-cache expired
 ::
 ++  load-group-summaries
+  |=  force-refresh=?
   ^-  _state
-  ?:  (gte (add updated.gs-cache.state ttl.gs-cache.state) now.bowl)
+  ?:  ?&  (gte (add updated.gs-cache.state ttl.gs-cache.state) now.bowl)
+          ?!(force-refresh)
+      ==
     state
   =/  mgc  my-groups-chats
   =.  chat-cache.state  (update-chat-cache mgc)

@@ -23,7 +23,7 @@
 :picky &picky-action [%all-groups ~]
 :picky &picky-action [%alter-cache-ttl ~m1]
 
-::  WORK
+::  WORKs
 :picky &picky-action [%ban [~bacdul-timzod %dm--timluc-miptev] ~timluc-miptev]
 :picky &picky-action [%ban [~timluc-miptev %the-collapse] ~larsum-tacrus]
 
