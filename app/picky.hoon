@@ -58,6 +58,7 @@
 ++  on-poke
   |=  [=mark =vase]
   ^-  (quip card _this)
+  ?>  (team:title [our src]:bowl)
   |^
   ::  refresh group-summaries cache on every request
   ::
