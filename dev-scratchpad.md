@@ -25,7 +25,7 @@
 
 ::  WORKs
 :picky &picky-action [%ban [~bacdul-timzod %dm--timluc-miptev] ~timluc-miptev]
-:picky &picky-action [%ban [~timluc-miptev %the-collapse] ~larsum-tacrus]
+:picky &picky-action [%ban [~timluc-miptev %the-collapse] ~somlus-savlev]
 
 ```
 

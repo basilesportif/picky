@@ -6,6 +6,7 @@ then
 fi
 
 cp -r app/* $1/app/
+cp -r lib/* $1/lib/
 cp -r mar/* $1/mar/
 cp -r sur/* $1/sur/
 
