@@ -5,9 +5,9 @@ then
     exit;
 fi
 
-cp -r app/* $1/app/
-cp -r lib/* $1/lib/
-cp -r mar/* $1/mar/
-cp -r sur/* $1/sur/
-
-
+echo "Watching for changes to copy to ${1}..."
+while [ 0 ]
+do
+    sleep 0.1
+    rsync -r --exclude '.*' --exclude '*.sh' --exclude '*.md' * $1
+done
