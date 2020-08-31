@@ -1,28 +1,30 @@
 #!/bin/bash
-usage() { echo "Usage: $0 URBIT_PIER_DIRECTORY [-w (watch code and copy to pier)]" 1>&2; exit 1; }
+usage() { printf "Usage: $0 [-w] URBIT_PIER_DIRECTORY  \n(-w: flag to watch and live copy code)\n" 1>&2; exit 1; }
 
 if [ $# -eq 0 ]; then
     usage
     exit 2
 fi
+PIER=$1
 
 while getopts "w" opt; do
     case ${opt} in
         w) WATCH_MODE="true"
+           PIER=$2
            ;;
         *) usage
            ;;
     esac
 done
 
-if [ -z "$WATCH_MODE"]; then
+if [ -z "$WATCH_MODE" ]; then
     echo "Installed %picky"
-    rsync -r --exclude '.*' --exclude '*.sh' --exclude '*.md' * $1/
+    rsync -r --exclude '.*' --exclude '*.sh' --exclude '*.md' * $PIER/
 else
-   echo "Watching for changes to copy to ${1}..."
+   echo "Watching for changes to copy to ${PIER}..."
    while [ 0 ]
    do
     sleep 0.8
-    rsync -r --exclude '.*' --exclude '*.sh' --exclude '*.md' * $1/
+    rsync -r --exclude '.*' --exclude '*.sh' --exclude '*.md' * $PIER/
    done
 fi
