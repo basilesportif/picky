@@ -26,3 +26,9 @@ THEN
 |start %picky
 :picky &picky-action [%load-chats ~]
 ```
+
+### Live Code Reload
+If you want to watch the code directories and copy them to their ship as they are modified:
+```
+./install.sh -w $PIER_DIR
+```
