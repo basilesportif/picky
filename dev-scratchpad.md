@@ -8,7 +8,7 @@
 :picky +dbug [%state 'updated.gs-cache']
 :picky +dbug [%state 'banned']
 
-:picky +dbug [%state '~(get by gs-cache)']
+:picky +dbug [%state '(~(get by chat-cache) [])']
 ```
 
 ## debug prints
@@ -22,10 +22,15 @@
 :picky &picky-action [%group-summary [~timluc-miptev %the-collapse]]
 :picky &picky-action [%all-groups ~]
 :picky &picky-action [%alter-cache-ttl ~m1]
+:picky &picky-action [%bust-cache ~]
+
+::  !!bust cache and then recompute immediately!!
+:picky &picky-action [%bust-cache ~]
+:picky &picky-action [%group-summary [~timluc-miptev %the-collapse]]
 
 ::  WORKs
 :picky &picky-action [%ban [~bacdul-timzod %dm--timluc-miptev] ~timluc-miptev]
-:picky &picky-action [%ban [~timluc-miptev %the-collapse] ~somlus-savlev]
+:picky &picky-action [%ban [~timluc-miptev %the-collapse] ~rivdut-pitryl]
 
 ```
 

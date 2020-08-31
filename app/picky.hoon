@@ -9,14 +9,13 @@
         state-1
         state-2
     ==
-::
-+$  state-0
-    $:  [%0 counter=@]
-    ==
-+$  state-1  [%1 =chat-cache]
 ::  record banned users since private groups don't record this
 ::
 +$  state-2  [%2 =banned =chat-cache =gs-cache]
++$  state-1  [%1 =chat-cache]
++$  state-0
+    $:  [%0 counter=@]
+    ==
 ::
 +$  card  card:agent:gall
 ++  init-gs-cache  [*time ~m10 *group-summaries]
@@ -87,6 +86,9 @@
       ~&  >>  gs.gs-cache.state
       `state
       ::
+        %bust-cache
+      `bust-cache
+      ::
         %alter-cache-ttl
       `state(ttl.gs-cache ttl.action)
       ::
@@ -106,6 +108,9 @@
       %poke
       [%group-update !>([%remove-members rid (sy ~[user])])]
     ==
+  ++  bust-cache
+    ^-  state-2
+    [%2 banned *^chat-cache init-gs-cache]
   --
 ++  on-agent
   |=  [=wire =sign:agent:gall]
@@ -141,9 +146,10 @@
     =*  k  [path.update author.envelope.update]
     ?.  (~(has by ccs) k)
       `this
-    =/  msgs=(list envelope:store)
+    =/  es=(list envelope:store)
       (~(got by ccs) k)
-    =.  ccs  (~(put by ccs) k [envelope.update msgs])
+    ~&  >>  "picky %message: {<k>} at {<when.envelope.update>}"
+    =.  ccs  (~(put by ccs) k [envelope.update es])
     `this
   --
 ::
@@ -220,7 +226,7 @@
   ^-  ^chat-cache
   =*  ccs  chat-cache.state
   ?~  envelopes.m  ccs
-  ::  make sure this chat-path not here before we flop
+  ::  only do initial cache for chat/author that isn't present
   ?:  (~(has by ccs) [chat-path author.i.envelopes.m])
     ccs
   =/  es  (flop envelopes.m)
@@ -240,18 +246,18 @@
 ++  load-group-summaries
   |=  force-refresh=?
   ^-  _state
-  ?:  ?&  (gte (add updated.gs-cache.state ttl.gs-cache.state) now.bowl)
+  ?:  ?&  (gte (add updated.gs-cache ttl.gs-cache) now.bowl)
           ?!(force-refresh)
       ==
     state
   =/  mgc  my-groups-chats
   =.  chat-cache.state  (update-chat-cache mgc)
-  =.  gs-cache.state  [now.bowl ttl.gs-cache.state (summarize-groups mgc)]
+  =.  gs-cache.state  [now.bowl ttl.gs-cache (summarize-groups mgc)]
   state
 ::  do NOT call this directly; use load-group-summaries to get caching
 ::
 ++  summarize-groups
-  ~&  >>  "summarize-groups "
+  ~&  >>  "summarize-groups: recomputing groups-chats cache"
   |=  xs=(list [gp=group-path:md chat-path=app-path:md])
   ^-  group-summaries
   =|  gs=group-summaries
@@ -263,9 +269,7 @@
     (scry-group:grp rid)
   ?~  g  $(xs t.xs)
   =/  gsum=group-summary
-    ?:  (~(has by gs) rid)
-      (~(got by gs) rid)
-    (init-group-summary u.g)
+    (~(gut by gs) rid (init-group-summary u.g))
   =.  chats.gsum
     (~(put in chats.gsum) chat-path.i.xs)
   =.  stats.gsum
@@ -301,6 +305,7 @@
     (update-user-summary us es)
   $(users t.users)
 ++  update-user-summary
+
   |=  [us=user-summary msgs=(list envelope:store)]
   |-  ^-  user-summary
   ?~  msgs  us

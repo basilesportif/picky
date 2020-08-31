@@ -1,4 +1,5 @@
 **warning** `%picky` is in active development; don't use on real ships yet
+
 If you want to see its power, I recommend firing it up on an `-L` ship where you are a group owner or admin, and then poking it with `%group-summary` or `%messages`.
 
 # picky

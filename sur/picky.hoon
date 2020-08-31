@@ -4,6 +4,7 @@
   $%  [%messages rid=resource user=ship num-msgs=@]
       [%group-summary rid=resource]
       [%all-groups ~]
+      [%bust-cache ~]
       [%alter-cache-ttl ttl=@dr]
       [%ban rid=resource user=ship] 
   ==
