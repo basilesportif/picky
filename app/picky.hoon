@@ -211,7 +211,7 @@
 ::
 ::
 ++  update-chat-cache
-  |=  xs=(list [gp=group-path:md chat-path=app-path:md])
+  |=  xs=(list [* chat-path=app-path:md])
   =*  ccs  chat-cache.state
   |-  ^-  ^chat-cache
   ?~  xs  ccs

@@ -42,7 +42,7 @@
 ::  Check banned members in The Collapse
 :picky +dbug [%state 'banned']
 ```
-
+3
 ## picky actions remote JS
 ```
 window.urb.poke(window.ship, 'picky-view', 'picky-view-action', {'messages': {rid: {entity: '~timluc-miptev', name: 'the-collapse'}, user: '~timluc-miptev', 'num-msgs': 4}}, () => console.log("Successful poke"), (err) => console.log(err));
