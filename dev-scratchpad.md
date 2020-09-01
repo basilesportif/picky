@@ -8,7 +8,7 @@
 :picky +dbug [%state 'updated.gs-cache']
 :picky +dbug [%state 'banned']
 
-:picky +dbug [%state '(~(get by chat-cache) [])']
+:picky +dbug [%state '(~(get by chat-cache) [/~timluc-miptev/macro---monetary-879])']
 ```
 
 ## debug prints
@@ -41,4 +41,13 @@
 
 ::  Check banned members in The Collapse
 :picky +dbug [%state 'banned']
+```
+
+## picky actions remote JS
+```
+window.urb.poke(window.ship, 'picky-view', 'picky-view-action', {'messages': {rid: {entity: '~timluc-miptev', name: 'the-collapse'}, user: '~timluc-miptev', 'num-msgs': 4}}, () => console.log("Successful poke"), (err) => console.log(err));
+
+window.urb.poke(window.ship, 'picky-view', 'picky-view-action', {'group-summary': {rid: {entity: '~timluc-miptev', name: 'the-collapse'}}}, () => console.log("Successful poke"), (err) => console.log(err));
+
+window.urb.poke(window.ship, 'picky-view', 'picky-view-action', {ban: {rid: {entity: '~timluc-miptev', name: 'the-collapse'}, user: '~fabnev-hinmur'}}, () => console.log("Successful poke"), (err) => console.log(err));
 ```

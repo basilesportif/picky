@@ -23,7 +23,7 @@
 ++  on-init
   ^-  (quip card _this)
   ~&  >  '%picky-view initialized successfully'
-  =/  filea  [%file-server-action !>([%serve-dir /'~picky' /app/picky-view %.n])]
+  =/  filea  [%file-server-action !>([%serve-dir /'~picky' /app/picky-view %.n %.y])]
   :_  this
   :~  [%pass /srv %agent [our.bowl %file-server] %poke filea]
   ==
@@ -40,11 +40,11 @@
   |^  ^-  (quip card _this)
   ?+    mark  (on-poke:def mark vase)
       %picky-view-action
-    (handle-action !<(action:view vase))
+      (handle-action !<(action:view vase))
   ==
   ++  handle-action
     |=  =action:view
-    ~&  action
+    ~&  >>>  action
     `this
   --
 ::
