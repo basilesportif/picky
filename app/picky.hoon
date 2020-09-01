@@ -140,17 +140,23 @@
   ++  handle-chat-update
     |=  =update:store
     ^-  (quip card _this)
-    =*  ccs  chat-cache.state
-    ?.  ?=([%message * *] update)
-      `this
-    =*  k  [path.update author.envelope.update]
-    ?.  (~(has by ccs) k)
-      `this
-    =/  es=(list envelope:store)
-      (~(got by ccs) k)
-    ~&  >>  "picky %message: {<k>} at {<when.envelope.update>}"
-    =.  ccs  (~(put by ccs) k [envelope.update es])
-    `this
+    ?+    update  `this
+        [%messages *]
+      ~&  >>>  "%messages: {<path.update>}; {<start.update>}, {<end.update>}"
+      `this(chat-cache (insert-envelopes path.update envelopes.update))
+        [%message * *]
+      ~&  >>  "%message: {<when.envelope.update>}"
+      `this(chat-cache (insert-envelopes path.update ~[envelope.update]))
+    ==
+  ++  insert-envelopes
+    |=  [pax=path es=(list envelope:store)]
+    |-  ^+  chat-cache
+    ?~  es
+      chat-cache
+    =*  k  [pax author.i.es]
+    ?.  (~(has by chat-cache) k)
+      $(es t.es)
+    $(chat-cache (~(add ja chat-cache) k i.es), es t.es)
   --
 ::
 ++  on-watch  on-watch:def
