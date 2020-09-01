@@ -238,12 +238,10 @@
   =/  es  (flop envelopes.m)
   |-
   ?~  es  ccs
+  =*  k  [chat-path author.i.es]
   =/  user-msgs=(list envelope:store)
-    (~(gut by ccs) [chat-path author.i.es] ~)
-  =.  ccs
-    %+  ~(put by ccs)
-      [chat-path author.i.es]
-    [i.es user-msgs]
+    (~(gut by ccs) k ~)
+  =.  ccs  (~(put by ccs) k [i.es user-msgs])
   $(es t.es)
 ::
 ::
