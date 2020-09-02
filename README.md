@@ -1,4 +1,5 @@
 **warning** `%picky` is in active development; don't use on real ships yet
+
 If you want to see its power, I recommend firing it up on an `-L` ship where you are a group owner or admin, and then poking it with `%group-summary` or `%messages`.
 
 # picky
@@ -24,4 +25,10 @@ THEN
 |commit %home
 |start %picky
 :picky &picky-action [%load-chats ~]
+```
+
+### Live Code Reload
+If you want to watch the code directories and copy them to their ship as they are modified:
+```
+./install.sh -w $PIER_DIR
 ```

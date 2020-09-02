@@ -8,7 +8,8 @@
 :picky +dbug [%state 'updated.gs-cache']
 :picky +dbug [%state 'banned']
 
-:picky +dbug [%state '~(get by gs-cache)']
+:picky +dbug [%state '(~(get by chat-cache) [/~bacdul-timzod/group-picky-testing-chat-4025 ~bacdul-timzod])']
+:picky +dbug [%state '~(key by chat-cache)']
 ```
 
 ## debug prints
@@ -18,15 +19,24 @@
 
 ## picky actions
 ```
-:picky &picky-action [%messages [~timluc-miptev %the-collapse] ~larsum-tacrus 10]
+:picky &picky-action [%messages [~timluc-miptev %the-collapse] ~timluc-miptev 10]
 :picky &picky-action [%group-summary [~timluc-miptev %the-collapse]]
 :picky &picky-action [%all-groups ~]
 :picky &picky-action [%alter-cache-ttl ~m1]
+:picky &picky-action [%bust-cache ~]
+
+::  !!bust cache and then recompute immediately!!
+:picky &picky-action [%bust-cache ~]
+:picky &picky-action [%group-summary [~timluc-miptev %the-collapse]]
 
 ::  WORKs
 :picky &picky-action [%ban [~bacdul-timzod %dm--timluc-miptev] ~timluc-miptev]
-:picky &picky-action [%ban [~timluc-miptev %the-collapse] ~larsum-tacrus]
+:picky &picky-action [%ban [~timluc-miptev %the-collapse] ~rivdut-pitryl]
+```
 
+### misc test actions
+```
+:picky &picky-action [%group-summary [~bacdul-timzod %dm--timluc-miptev]]
 ```
 
 ## dbug state
@@ -36,4 +46,13 @@
 
 ::  Check banned members in The Collapse
 :picky +dbug [%state 'banned']
+```
+3
+## picky actions remote JS
+```
+window.urb.poke(window.ship, 'picky-view', 'picky-view-action', {'messages': {rid: {entity: '~timluc-miptev', name: 'the-collapse'}, user: '~timluc-miptev', 'num-msgs': 4}}, () => console.log("Successful poke"), (err) => console.log(err));
+
+window.urb.poke(window.ship, 'picky-view', 'picky-view-action', {'group-summary': {rid: {entity: '~timluc-miptev', name: 'the-collapse'}}}, () => console.log("Successful poke"), (err) => console.log(err));
+
+window.urb.poke(window.ship, 'picky-view', 'picky-view-action', {ban: {rid: {entity: '~timluc-miptev', name: 'the-collapse'}, user: '~fabnev-hinmur'}}, () => console.log("Successful poke"), (err) => console.log(err));
 ```
