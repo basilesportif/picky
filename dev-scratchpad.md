@@ -19,7 +19,7 @@
 
 ## picky actions
 ```
-:picky &picky-action [%messages [~timluc-miptev %the-collapse] ~larsum-tacrus 10]
+:picky &picky-action [%messages [~timluc-miptev %the-collapse] ~timluc-miptev 10]
 :picky &picky-action [%group-summary [~timluc-miptev %the-collapse]]
 :picky &picky-action [%all-groups ~]
 :picky &picky-action [%alter-cache-ttl ~m1]
