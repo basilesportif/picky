@@ -8,7 +8,8 @@
 :picky +dbug [%state 'updated.gs-cache']
 :picky +dbug [%state 'banned']
 
-:picky +dbug [%state '(~(get by chat-cache) [/~timluc-miptev/macro---monetary-879])']
+:picky +dbug [%state '(~(get by chat-cache) [/~bacdul-timzod/group-picky-testing-chat-4025 ~bacdul-timzod])']
+:picky +dbug [%state '~(key by chat-cache)']
 ```
 
 ## debug prints
@@ -31,7 +32,11 @@
 ::  WORKs
 :picky &picky-action [%ban [~bacdul-timzod %dm--timluc-miptev] ~timluc-miptev]
 :picky &picky-action [%ban [~timluc-miptev %the-collapse] ~rivdut-pitryl]
+```
 
+### misc test actions
+```
+:picky &picky-action [%group-summary [~bacdul-timzod %dm--timluc-miptev]]
 ```
 
 ## dbug state

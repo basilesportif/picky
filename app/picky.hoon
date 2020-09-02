@@ -154,8 +154,10 @@
     ?~  es
       chat-cache
     =*  k  [pax author.i.es]
+    ~&  >>  "checking: {<k>}"
     ?.  (~(has by chat-cache) k)
       $(es t.es)
+    ~&  >  "adding: {<k>}, {<i.es>}"
     $(chat-cache (~(add ja chat-cache) k i.es), es t.es)
   --
 ::
