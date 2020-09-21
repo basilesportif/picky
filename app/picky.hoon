@@ -41,7 +41,7 @@
   !>(state)
 ++  on-load
   |=  old-state=vase
-  ~&  >  '%picky  recompiled successfully'
+  ~&  >  '%picky recompiled successfully'
   ^-  (quip card _this)
   =/  old  !<(versioned-state old-state)
   ?-  -.old
@@ -78,11 +78,10 @@
       `state
       ::
         %group-summary
-      ~&  >>  %group-summary
+      ~&  >>  (group-info:hc rid.action)
       `state
       ::
-        %all-groups
-        ::  TODO: return/print (set group-info)
+        %all-chats
       ~&  >>  my-chats-by-group:hc
       `state
       ::
@@ -140,57 +139,46 @@
   ^-  (list msg)
   ~
 ::
-++  summarize-groups
-  |=  xs=(list [gp=group-path:md chat-path=app-path:md])
-  ^-  group-summaries
-  =|  gs=group-summaries
-  |-
-  ?~  xs  gs
-  =/  rid=resource
-    (de-path:resource gp.i.xs)
+++  group-info
+  |=  rid=resource:resource
+  ^-  (set chat-meta)
   =/  g=(unit group:group)
     (scry-group:grp rid)
-  ?~  g  $(xs t.xs)
-  =/  gsum=group-summary
-    (~(gut by gs) rid (init-group-summary u.g))
-  =.  chats.gsum
-    (~(put in chats.gsum) chat-path.i.xs)
-  =.  stats.gsum
-    (calc-stats stats.gsum chat-path.i.xs)
-  $(xs t.xs, gs (~(put by gs) rid gsum))
-++  init-group-summary
-  |=  [g=group:group]
-  ^-  group-summary
-  :-  *(set path)
-  %-  malt
-  %+  turn  ~(tap in (all-members g))
-  |=(user=ship [user *user-summary])
+  ?~  g  ~
+  =/  chats=(unit (set chat-meta))
+    (~(get by my-chats-by-group) rid)
+  ?~  chats  ~
+  u.chats
+::  :-  ~
+::  :-  u.chats
+::  %-  ~(run in (all-members g))
+::  |=  user=ship  *user-stats
 ::  includes admins members to handle DM case
 ::
 ++  all-members
   |=  g=group:group
+  ^-  (set ship)
   =/  admins=(set ship)
     (~(gut by tags.g) %admin *(set ship))
   (~(uni in admins) members.g)
-++  calc-stats
-  |=  [stats=(map ship user-summary) chat-path=path]
-  =/  num-msgs=@  10
-  =/  users=(list ship)
-    ~(tap in ~(key by stats))
-  |-  ^+  stats
-  ?~  users  stats
-  stats
-++  update-user-summary
-
-  |=  [us=user-summary msgs=(list envelope:store)]
-  |-  ^-  user-summary
-  ?~  msgs  us
-  ?.  (after-date ~d30 when.i.msgs)  us
-  =.  us
-    :*  ?:((after-date ~d7 when.i.msgs) +(num-week.us) num-week.us)
-        +(num-month.us)
-    ==
-  $(msgs t.msgs)
+::++  calc-stats
+::  |=  [stats=(map ship user-summary) chat-path=path]
+::  =/  num-msgs=@  10
+::  =/  users=(list ship)
+::    ~(tap in ~(key by stats))
+::  |-  ^+  stats
+::  ?~  users  stats
+::  stats
+::  ++  update-user-summary
+::  |=  [us=user-summary msgs=(list envelope:store)]
+::  |-  ^-  user-summary
+::  ?~  msgs  us
+::  ?.  (after-date ~d30 when.i.msgs)  us
+::  =.  us
+::    :*  ?:((after-date ~d7 when.i.msgs) +(num-week.us) num-week.us)
+::        +(num-month.us)
+::    ==
+::  $(msgs t.msgs)
 ++  after-date
   |=  [interval=@dr d=@da]
   (gte d (sub now.bowl interval))
@@ -209,18 +197,13 @@
     (~(gut by tags.u.g) %admin *(set ship))
   (~(has in admins) our.bowl)
 ++  my-chats-by-group
-  ^-  (jug group-meta chat-meta)
+  ^-  (jug resource:resource chat-meta)
   =/  mc  my-chats
-  =/  mg  my-groups
-  =|  metas=(jug group-meta chat-meta)
+  =|  metas=(jug resource:resource chat-meta)
   |-
   ?~  mc  metas
-  =/  group-name=(unit @t)
-    (~(get by mg) rid.i.mc)
-  ?~  group-name
-    $(mc t.mc)
   =.  metas
-    (~(put ju metas) [rid.i.mc u.group-name] [app-path.i.mc title.i.mc])
+    (~(put ju metas) rid.i.mc [app-path.i.mc title.i.mc])
   $(mc t.mc)
 ++  my-chats
   ^-  (list [rid=resource:resource =app-path:md title=@t])
@@ -228,9 +211,9 @@
     %+  skim  ~(tap by (scry-md-assocs %chat))
     |=([[gp=group-path:md *] *] (is-my-group gp))
   |=([[gp=group-path:md @ ap=app-path:md] m=metadata:md] [(de-path:resource gp) ap title.m])
-++  my-groups
-  ^-  (map resource:resource @t)
-  %-  ~(gas by *(map resource:resource @t))
+++  my-group-names
+  ^-  group-names
+  %-  ~(gas by *group-names)
     %+  turn
       %+  skim  ~(tap by (scry-md-assocs %contacts))
       |=([[gp=group-path:md *] *] (is-my-group gp))
