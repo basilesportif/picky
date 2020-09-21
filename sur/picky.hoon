@@ -15,7 +15,7 @@
 ::  envelope marked with chat path
 ::
 +$  msg  [chat-path=path e=envelope:store]
-+$  group-info
++$  group-stats
   $:  chats=(set chat-meta)
       stats=(set user-stats)
   ==

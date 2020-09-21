@@ -141,18 +141,18 @@
 ::
 ++  group-info
   |=  rid=resource:resource
-  ^-  (set chat-meta)
+  ^-  (unit group-stats)
   =/  g=(unit group:group)
     (scry-group:grp rid)
   ?~  g  ~
+  =/  stats=(set user-stats)
+  %-  ~(run in (all-members u.g))
+    |=  user=ship  [user 0 0]
   =/  chats=(unit (set chat-meta))
     (~(get by my-chats-by-group) rid)
   ?~  chats  ~
-  u.chats
-::  :-  ~
-::  :-  u.chats
-::  %-  ~(run in (all-members g))
-::  |=  user=ship  *user-stats
+  `[u.chats stats]
+
 ::  includes admins members to handle DM case
 ::
 ++  all-members
