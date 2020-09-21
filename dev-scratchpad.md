@@ -12,8 +12,19 @@
 :picky +dbug [%state '~(key by chat-cache)']
 ```
 
+## Group scrys
+```
+=store -build-file %/sur/metadata-store/hoon
+.^(associations:store %gx /=metadata-store=/app-name/chat/noun)
+
+
+:: 'contacts' is the app for Group names
+.^(associations:store %gx /=metadata-store=/app-name/contacts/noun)
+```
+
 ## debug prints
 ```
+=store -build-file %/sur/metadata-store/hoon
 ~&  >>  (user-group-msgs:hc [~timluc-miptev %the-collapse] ~timluc-miptev 10)
 ```
 

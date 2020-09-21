@@ -4,15 +4,14 @@
   $%  [%messages rid=resource user=ship num-msgs=@]
       [%group-summary rid=resource]
       [%all-groups ~]
-      [%bust-cache ~]
-      [%alter-cache-ttl ttl=@dr]
       [%ban rid=resource user=ship]
   ==
 :: all messages for a user in a chat, newest first
 ::
 +$  banned  (jug resource ship)
-+$  chat-cache  (jar [path ship] envelope:store)
-+$  gs-cache  [updated=time ttl=@dr gs=group-summaries]
++$  chat-path  path
++$  chat-meta   [=chat-path name=@t]
++$  group-meta  [rid=resource name=@t chats=(set chat-meta)]
 ::  envelope marked with chat path
 ::
 +$  msg  [chat-path=path e=envelope:store]
@@ -25,4 +24,7 @@
    $:  num-week=@
        num-month=@
   ==
+::  deprecated
++$  chat-cache  (jar [path ship] envelope:store)
++$  gs-cache  [updated=time ttl=@dr gs=group-summaries]
 --

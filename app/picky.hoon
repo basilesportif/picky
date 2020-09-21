@@ -8,9 +8,11 @@
     $%  state-0
         state-1
         state-2
+        state-3
     ==
 ::  record banned users since private groups don't record this
 ::
++$  state-3  [%3 =banned]
 +$  state-2  [%2 =banned =chat-cache =gs-cache]
 +$  state-1  [%1 =chat-cache]
 +$  state-0
@@ -18,11 +20,10 @@
     ==
 ::
 +$  card  card:agent:gall
-++  init-gs-cache  [*time ~m10 *group-summaries]
 ::
 --
 %-  agent:dbug
-=|  state-2
+=|  state-3
 =*  state  -
 ^-  agent:gall
 =<
@@ -34,8 +35,7 @@
 ++  on-init
   ^-  (quip card _this)
   ~&  >  '%picky initialized successfully'
-  :-  subscribe-chat-updates:hc
-  this(state [%2 *^banned *^chat-cache init-gs-cache])
+  `this(state [%3 *^banned])
 ++  on-save
   ^-  vase
   !>(state)
@@ -45,23 +45,22 @@
   ^-  (quip card _this)
   =/  old  !<(versioned-state old-state)
   ?-  -.old
-      %2  `this(state old)
+      %3  `this(state old)
+    ::
+      %2
+    `this(state [%3 banned.old])
     ::
       %1
-    `this(state [%2 *^banned chat-cache.old init-gs-cache])
+    `this(state [%3 *^banned])
     ::
       %0
-    :-  subscribe-chat-updates:hc
-    this(state [%2 *^banned *^chat-cache init-gs-cache])
+    `this(state [%3 *^banned])
   ==
 ++  on-poke
   |=  [=mark =vase]
   ^-  (quip card _this)
   ?>  (team:title [our src]:bowl)
   |^
-  ::  refresh group-summaries cache on every request
-  ::
-  =.  state  (load-group-summaries:hc %.n)
   =^  cards  state
   ?+    mark  (on-poke:def mark vase)
       %picky-action
@@ -73,24 +72,17 @@
     ^-  (quip card _state)
     ?-    -.action
         %messages
-      =/  msgs=(list msg)
-        (user-group-msgs:hc +.action)
-      ~&  >>  msgs
+      ~&  >>  %messages
       `state
       ::
         %group-summary
-      ~&  >>  (~(get by gs.gs-cache.state) rid.action)
+      ~&  >>  %group-summary
       `state
       ::
         %all-groups
-      ~&  >>  gs.gs-cache.state
+        ::  TODO: return/print (set group-info)
+      ~&  >>  %all-groups
       `state
-      ::
-        %bust-cache
-      `bust-cache
-      ::
-        %alter-cache-ttl
-      `state(ttl.gs-cache ttl.action)
       ::
       ::  actual banning happens when our poke is acked
       ::
@@ -108,9 +100,6 @@
       %poke
       [%group-update !>([%remove-members rid (sy ~[user])])]
     ==
-  ++  bust-cache
-    ^-  state-2
-    [%2 banned *^chat-cache init-gs-cache]
   --
 ++  on-agent
   |=  [=wire =sign:agent:gall]
@@ -124,41 +113,13 @@
       [(slav %p i.t.wire) i.t.t.wire]
     =/  user=ship  (slav %p i.t.t.t.wire)
     (ban rid user)
-  ?+    -.sign  (on-agent:def wire sign)
-      %fact
-    ?+    p.cage.sign  (on-agent:def wire sign)
-        %chat-update
-      (handle-chat-update !<(update:store q.cage.sign))
-    ==
-  ==
+  `this
   ++  ban
     |=  [rid=resource user=ship]
     ^-  (quip card _this)
     ~&  >>  "banned {<user>} from {<rid>}"
     =.  banned.state  (~(put ju banned.state) rid user)
     `this
-  ++  handle-chat-update
-    |=  =update:store
-    ^-  (quip card _this)
-    ?+    update  `this
-        [%messages *]
-      ~&  >>>  "%messages: {<path.update>}; {<start.update>}, {<end.update>}"
-      `this(chat-cache (insert-envelopes path.update envelopes.update))
-        [%message * *]
-      ~&  >>  "%message: {<when.envelope.update>}"
-      `this(chat-cache (insert-envelopes path.update ~[envelope.update]))
-    ==
-  ++  insert-envelopes
-    |=  [pax=path es=(list envelope:store)]
-    |-  ^+  chat-cache
-    ?~  es
-      chat-cache
-    =*  k  [pax author.i.es]
-    ~&  >>  "checking: {<k>}"
-    ?.  (~(has by chat-cache) k)
-      $(es t.es)
-    ~&  >  "adding: {<k>}, {<i.es>}"
-    $(chat-cache (~(add ja chat-cache) k i.es), es t.es)
   --
 ::
 ++  on-watch  on-watch:def
@@ -172,98 +133,12 @@
 ::
 |_  =bowl:gall
 +*  grp  ~(. group-lib bowl)
-++  subscribe-chat-updates
-  ^-  (list card)
-  ?:  %-  ~(any in `(set [wire ship term])`~(key by wex.bowl))
-        |=([=wire *] ?=([%chat-store-updates ~] wire))
-    ~
-  ~[[%pass /chat-store-updates %agent [our.bowl %chat-store] %watch /updates]]
-::  uses gs-cache in state, regardless of staleness
-::
 ++  user-group-msgs
   |=  [group-rid=resource user=ship num-msgs=@]
   ^-  (list msg)
-  =/  gs=(unit group-summary)
-    (~(get by gs.gs-cache.state) group-rid)
-  ?~  gs  ~
-  =|  acc=(list msg)
-  |-
-  ?:  =(0 num-msgs)  (flop acc)
-  =^  m=(unit msg)  chat-cache.state
-    (pop-newest-msg ~(tap in chats.u.gs) user chat-cache.state)
-  ?~  m  (flop acc)
-  $(acc [u.m acc], num-msgs (dec num-msgs))
-::  pops the newest msg for user in list of chats; returns updated chat-cache
-::
-++  pop-newest-msg
-  |=  [chats=(list path) user=ship cc=^chat-cache]
-  ^-  [(unit msg) _cc]
-  =/  ms=(list msg)
-    %+  murn  chats
-    |=(cp=path (first-msg cp user cc))
-  =/  sorted=(list msg)
-    (sort ms |=([m1=msg m2=msg] (gte when.e.m1 when.e.m2)))
-  ?~  sorted  [~ cc]
-  =*  k  [chat-path.i.sorted user]
-  =.  cc
-    %+  ~(put by cc)  k
-    (slag 1 (~(gut by cc) k ~))
-  [`i.sorted cc]
-++  first-msg
-  |=  [cp=path user=ship cc=^chat-cache]
-  ^-  (unit msg)
-  =/  e=(list envelope.store)
-    (~(gut by cc) [cp user] ~)
-  ?~  e  ~
-  `[cp i.e]
-::
-::
-++  update-chat-cache
-  |=  xs=(list [* chat-path=app-path:md])
-  =*  ccs  chat-cache.state
-  |-  ^-  ^chat-cache
-  ?~  xs  ccs
-  =/  m=(unit mailbox:store)
-    (scry-mailbox chat-path.i.xs)
-  ?~  m  $(xs t.xs)
-  $(xs t.xs, ccs (cache-mailbox chat-path.i.xs u.m))
-::  caches a chat-store if it's uncached
-::
-++  cache-mailbox
-  |=  [chat-path=path m=mailbox:store]
-  ^-  ^chat-cache
-  =*  ccs  chat-cache.state
-  ?~  envelopes.m  ccs
-  ::  only do initial cache for chat/author that isn't present
-  ?:  (~(has by ccs) [chat-path author.i.envelopes.m])
-    ccs
-  =/  es  (flop envelopes.m)
-  |-
-  ?~  es  ccs
-  =*  k  [chat-path author.i.es]
-  =/  user-msgs=(list envelope:store)
-    (~(gut by ccs) k ~)
-  =.  ccs  (~(put by ccs) k [i.es user-msgs])
-  $(es t.es)
-::
-::
-::  recomputes group-summaries and chat-cache if gs-cache expired
-::
-++  load-group-summaries
-  |=  force-refresh=?
-  ^-  _state
-  ?:  ?&  (gte (add updated.gs-cache ttl.gs-cache) now.bowl)
-          ?!(force-refresh)
-      ==
-    state
-  =/  mgc  my-groups-chats
-  =.  chat-cache.state  (update-chat-cache mgc)
-  =.  gs-cache.state  [now.bowl ttl.gs-cache (summarize-groups mgc)]
-  state
-::  do NOT call this directly; use load-group-summaries to get caching
+  ~
 ::
 ++  summarize-groups
-  ~&  >>  "summarize-groups: recomputing groups-chats cache"
   |=  xs=(list [gp=group-path:md chat-path=app-path:md])
   ^-  group-summaries
   =|  gs=group-summaries
@@ -302,14 +177,7 @@
     ~(tap in ~(key by stats))
   |-  ^+  stats
   ?~  users  stats
-  =/  us=user-summary
-    (~(got by stats) i.users)
-  =/  es=(list envelope:store)
-    (~(gut by chat-cache) [chat-path i.users] ~)
-  =.  stats
-    %+  ~(put by stats)  i.users
-    (update-user-summary us es)
-  $(users t.users)
+  stats
 ++  update-user-summary
 
   |=  [us=user-summary msgs=(list envelope:store)]
