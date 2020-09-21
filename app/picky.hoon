@@ -48,10 +48,12 @@
       %3  `this(state old)
     ::
       %2
-    `this(state [%3 banned.old])
+    :_  this(state [%3 banned.old])
+    ~[[%pass /leave %agent [our.bowl %chat-store] %leave ~]]
     ::
       %1
-    `this(state [%3 *^banned])
+    :_  this(state [%3 *^banned])
+    ~[[%pass /leave %agent [our.bowl %chat-store] %leave ~]]
     ::
       %0
     `this(state [%3 *^banned])
