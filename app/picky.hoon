@@ -119,7 +119,7 @@
   ++  ban
     |=  [rid=resource user=ship]
     ^-  (quip card _this)
-    ~&  >>  "banned {<user>} from {<rid>}"
+    ~&  >>  "banned {<user>} from {<rid>} "
     =.  banned.state  (~(put ju banned.state) rid user)
     `this
   --
@@ -209,16 +209,32 @@
     (~(gut by tags.u.g) %admin *(set ship))
   (~(has in admins) our.bowl)
 ++  my-chats-by-group
-::  ^-  (list group-meta)
-  =/  my-chats=(list [[group-path:md md-resource:md] metadata:md])
+  ^-  (jug group-meta chat-meta)
+  =/  mc  my-chats
+  =/  mg  my-groups
+  =|  metas=(jug group-meta chat-meta)
+  |-
+  ?~  mc  metas
+  =/  group-name=(unit @t)
+    (~(get by mg) rid.i.mc)
+  ?~  group-name
+    $(mc t.mc)
+  =.  metas
+    (~(put ju metas) [rid.i.mc u.group-name] [app-path.i.mc title.i.mc])
+  $(mc t.mc)
+++  my-chats
+  ^-  (list [rid=resource:resource =app-path:md title=@t])
+  %+  turn
     %+  skim  ~(tap by (scry-md-assocs %chat))
     |=([[gp=group-path:md *] *] (is-my-group gp))
-  =/  my-groups
+  |=([[gp=group-path:md @ ap=app-path:md] m=metadata:md] [(de-path:resource gp) ap title.m])
+++  my-groups
+  ^-  (map resource:resource @t)
+  %-  ~(gas by *(map resource:resource @t))
     %+  turn
       %+  skim  ~(tap by (scry-md-assocs %contacts))
       |=([[gp=group-path:md *] *] (is-my-group gp))
     |=([[gp=group-path:md *] m=metadata:md] [(de-path:resource gp) title.m])
-  my-groups
 ++  scry-md-assocs
   |=  app=app-name:md
   .^  associations:md
