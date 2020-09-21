@@ -15,21 +15,16 @@
 ::  envelope marked with chat path
 ::
 +$  msg  [chat-path=path e=envelope:store]
-+$  group-stats
-  $:  chats=(set chat-meta)
-      stats=(set user-stats)
-  ==
-+$  user-stats
-  $:   user=ship
-       num-week=@
-       num-month=@
-  ==
-:: DEPRECATED
-::
 +$  user-summary
   $:   num-week=@
        num-month=@
   ==
++$  group-stats
+  $:  chats=(set chat-meta)
+      stats=(map ship user-summary)
+  ==
+:: DEPRECATED
+::
 +$  group-summary
   $:  chats=(set chat-path)
       stats=(map ship user-summary)
