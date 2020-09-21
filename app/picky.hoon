@@ -83,7 +83,7 @@
       ::
         %all-groups
         ::  TODO: return/print (set group-info)
-      ~&  >>  %all-groups
+      ~&  >>  my-chats-by-group:hc
       `state
       ::
       ::  actual banning happens when our poke is acked
@@ -208,22 +208,26 @@
   =/  admins=(set ship)
     (~(gut by tags.u.g) %admin *(set ship))
   (~(has in admins) our.bowl)
-++  my-groups-chats
-  ^-  (list [group-path:md app-path:md])
-  =/  xs=(list [group-path:md app-path:md])
-    %~  tap  in
-    =/  ai=(jug app-name:md [group-path:md app-path:md])
-      .^
-       (jug app-name:md [group-path:md app-path:md])
-       %gy
-       (scot %p our.bowl)
-       %metadata-store
-       (scot %da now.bowl)
-       /app-indices
-      ==
-    (~(gut by ai) %chat *(set [group-path:md app-path:md]))
-  %+  skim  xs
-  |=([g=group-path:md *] (is-my-group g))
+++  my-chats-by-group
+::  ^-  (list group-meta)
+  =/  my-chats=(list [[group-path:md md-resource:md] metadata:md])
+    %+  skim  ~(tap by (scry-md-assocs %chat))
+    |=([[gp=group-path:md *] *] (is-my-group gp))
+  =/  my-groups
+    %+  turn
+      %+  skim  ~(tap by (scry-md-assocs %contacts))
+      |=([[gp=group-path:md *] *] (is-my-group gp))
+    |=([[gp=group-path:md *] m=metadata:md] [(de-path:resource gp) title.m])
+  my-groups
+++  scry-md-assocs
+  |=  app=app-name:md
+  .^  associations:md
+     %gx
+     (scot %p our.bowl)
+     %metadata-store
+     (scot %da now.bowl)
+     /app-name/[app]/noun
+    ==
 ++  scry-mailbox
   |=  pax=path
   .^

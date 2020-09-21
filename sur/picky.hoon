@@ -9,9 +9,10 @@
 :: all messages for a user in a chat, newest first
 ::
 +$  banned  (jug resource ship)
-+$  chat-path  path
++$  chat-path   path
++$  group-path  path
 +$  chat-meta   [=chat-path name=@t]
-+$  group-meta  [rid=resource name=@t chats=(set chat-meta)]
++$  group-meta  [rid=resource name=@t]
 ::  envelope marked with chat path
 ::
 +$  msg  [chat-path=path e=envelope:store]

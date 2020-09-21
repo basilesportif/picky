@@ -17,7 +17,6 @@
 =store -build-file %/sur/metadata-store/hoon
 .^(associations:store %gx /=metadata-store=/app-name/chat/noun)
 
-
 :: 'contacts' is the app for Group names
 .^(associations:store %gx /=metadata-store=/app-name/contacts/noun)
 ```
