@@ -141,15 +141,23 @@
 ::
 ++  group-info
   |=  rid=resource:resource
-  ^-  (unit group-stats)
+  ^-  group-stats
+  =|  gs=group-stats
   =/  g=(unit group:group)
     (scry-group:grp rid)
-  ?~  g  ~
-::  %-  ~(tap in (all-members u.g))
-  =/  chats=(unit (set chat-meta))
-    (~(get by my-chats-by-group) rid)
-  ?~  chats  ~
-  ~
+  ?~  g  gs
+  =/  stats=(map ship user-summary)
+    %-  malt
+    %+  turn  ~(tap in (all-members u.g))
+    |=(user=ship [user *user-summary])
+  =/  chats=(set chat-meta)
+    (~(gut by my-chats-by-group) rid *(set chat-meta))
+  =/  cs  ~(tap in chats)
+  |-
+  ?~  cs  [chats stats]
+  =.  stats
+    (calc-stats stats chat-path.i.cs)
+  $(cs t.cs)
 ::  includes admins members to handle DM case
 ::
 ++  all-members
@@ -158,24 +166,32 @@
   =/  admins=(set ship)
     (~(gut by tags.g) %admin *(set ship))
   (~(uni in admins) members.g)
-::++  calc-stats
-::  |=  [stats=(map ship user-summary) chat-path=path]
-::  =/  num-msgs=@  10
-::  =/  users=(list ship)
-::    ~(tap in ~(key by stats))
-::  |-  ^+  stats
-::  ?~  users  stats
-::  stats
-::  ++  update-user-summary
-::  |=  [us=user-summary msgs=(list envelope:store)]
-::  |-  ^-  user-summary
-::  ?~  msgs  us
-::  ?.  (after-date ~d30 when.i.msgs)  us
-::  =.  us
-::    :*  ?:((after-date ~d7 when.i.msgs) +(num-week.us) num-week.us)
-::        +(num-month.us)
-::    ==
-::  $(msgs t.msgs)
+++  calc-stats
+  |=  [stats=(map ship user-summary) =chat-path]
+  =/  users=(list ship)
+    ~(tap in ~(key by stats))
+  =/  mailbox  (scry-mailbox chat-path)
+  ?~  mailbox  stats
+  =/  es  envelopes.u.mailbox
+  |-  ^+  stats
+  ?~  users  stats
+  =/  us=user-summary
+    (~(got by stats) i.users)
+  =.  stats
+  %+  ~(put by stats)  i.users
+    (update-user-summary i.users us es)
+  $(users t.users)
+++  update-user-summary
+  |=  [user=ship us=user-summary msgs=(list envelope:store)]
+  |-  ^-  user-summary
+  ?~  msgs  us
+  ?.  (after-date ~d30 when.i.msgs)  us
+  ?.  =(author.i.msgs user)  $(msgs t.msgs)
+  =.  us
+    :*  ?:((after-date ~d7 when.i.msgs) +(num-week.us) num-week.us)
+        +(num-month.us)
+    ==
+  $(msgs t.msgs)
 ++  after-date
   |=  [interval=@dr d=@da]
   (gte d (sub now.bowl interval))
