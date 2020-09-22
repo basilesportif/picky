@@ -1,7 +1,7 @@
 /-  *resource, store=chat-store
 |%
 +$  action
-  $%  [%messages rid=resource user=ship num-msgs=@]
+  $%  [%messages rid=resource user=ship num-msgs=@ cutoff=@dr]
       [%group-summary rid=resource]
       [%all-chats ~]
       [%ban rid=resource user=ship]
@@ -14,7 +14,7 @@
 +$  chat-meta   [=chat-path name=@t]
 ::  envelope marked with chat path
 ::
-+$  msg  [chat-path=path e=envelope:store]
++$  msg  [=chat-path e=envelope:store]
 +$  user-summary
   $:   num-week=@
        num-month=@

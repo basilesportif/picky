@@ -74,7 +74,8 @@
     ^-  (quip card _state)
     ?-    -.action
         %messages
-      ~&  >>  %messages
+      ~&  >>  %+  turn  (user-group-msgs:hc +.action)
+              |=([=msg] [chat-path.msg when.e.msg letter.e.msg])
       `state
       ::
         %group-summary
@@ -134,10 +135,37 @@
 ::
 |_  =bowl:gall
 +*  grp  ~(. group-lib bowl)
++$  omsgs  ((mop msg $~) msg-after)
+++  orm  ((ordered-map msg $~) msg-after)
+++  tap-omsgs
+  |=  ms=omsgs
+  (turn (tap:orm ms) |=([m=msg *] m))
 ++  user-group-msgs
-  |=  [group-rid=resource user=ship num-msgs=@]
+  |=  [group-rid=resource user=ship num-msgs=@ cutoff=@dr]
   ^-  (list msg)
-  ~
+  =|  ms=omsgs
+  =/  chats=(list chat-meta)
+    ~(tap in (~(gut by my-chats-by-group) group-rid *(set chat-meta)))
+  |-
+  ?~  chats  (scag num-msgs (tap-omsgs ms))
+  %_  $
+      ms  (process-mailbox chat-path.i.chats user num-msgs cutoff ms)
+      chats  t.chats
+  ==
+::
+++  process-mailbox
+  |=  [=chat-path user=ship num-msgs=@ cutoff=@dr ms=omsgs]
+  ^-  omsgs
+  =/  mailbox  (scry-mailbox chat-path)
+  ?~  mailbox  ms
+  =/  es  envelopes.u.mailbox
+  =|  seen=@
+  |-
+  ?~  es  ms
+  ?:  (gte seen num-msgs)  ms
+  ?.  (after-date cutoff when.i.es)  ms
+  ?.  =(user author.i.es)  $(es t.es)
+  $(es t.es, seen +(seen), ms (put:orm ms [chat-path i.es] ~))
 ::
 ++  group-info
   |=  rid=resource:resource
@@ -182,19 +210,19 @@
     (update-user-summary i.users us es)
   $(users t.users)
 ++  update-user-summary
-  |=  [user=ship us=user-summary msgs=(list envelope:store)]
+  |=  [user=ship us=user-summary es=(list envelope:store)]
   |-  ^-  user-summary
-  ?~  msgs  us
-  ?.  (after-date ~d30 when.i.msgs)  us
-  ?.  =(author.i.msgs user)  $(msgs t.msgs)
+  ?~  es  us
+  ?.  (after-date ~d30 when.i.es)  us
+  ?.  =(author.i.es user)  $(es t.es)
   =.  us
-    :*  ?:((after-date ~d7 when.i.msgs) +(num-week.us) num-week.us)
+    :*  ?:((after-date ~d7 when.i.es) +(num-week.us) num-week.us)
         +(num-month.us)
     ==
-  $(msgs t.msgs)
+  $(es t.es)
 ++  after-date
   |=  [interval=@dr d=@da]
-  (gte d (sub now.bowl interval))
+  ^-  ?  (gte d (sub now.bowl interval))
 ::
 ::
 ++  is-my-group
@@ -231,6 +259,9 @@
       %+  skim  ~(tap by (scry-md-assocs %contacts))
       |=([[gp=group-path:md *] *] (is-my-group gp))
     |=([[gp=group-path:md *] m=metadata:md] [(de-path:resource gp) title.m])
+++  msg-after
+  |=  [m1=msg m2=msg]
+  ^-  ?  (gth when.e.m1 when.e.m2)
 ++  scry-md-assocs
   |=  app=app-name:md
   .^  associations:md

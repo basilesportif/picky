@@ -1,45 +1,25 @@
  
 ## dbug queries
 ```
-:picky +dbug [%state '(~(get by chat-cache) [/~timluc-miptev/the-collapse ~timluc-miptev])']
-
-:picky +dbug [%state 'gs-cache']
-:picky +dbug [%state 'ttl.gs-cache']
-:picky +dbug [%state 'updated.gs-cache']
 :picky +dbug [%state 'banned']
-
-:picky +dbug [%state '(~(get by chat-cache) [/~bacdul-timzod/group-picky-testing-chat-4025 ~bacdul-timzod])']
-:picky +dbug [%state '~(key by chat-cache)']
 ```
 
 ## Group scrys
 ```
-=store -build-file %/sur/metadata-store/hoon
-.^(associations:store %gx /=metadata-store=/app-name/chat/noun)
+=md -build-file %/sur/metadata-store/hoon
+.^(associations:md %gx /=metadata-store=/app-name/chat/noun)
 
 :: 'contacts' is the app for Group names
-.^(associations:store %gx /=metadata-store=/app-name/contacts/noun)
-```
-
-## debug prints
-```
-=store -build-file %/sur/metadata-store/hoon
-~&  >>  (user-group-msgs:hc [~timluc-miptev %the-collapse] ~timluc-miptev 10)
+.^(associations:md %gx /=metadata-store=/app-name/contacts/noun)
 ```
 
 ## picky actions
 ```
-:picky &picky-action [%messages [~timluc-miptev %the-collapse] ~timluc-miptev 10]
+:picky &picky-action [%messages [~timluc-miptev %the-collapse] ~timluc-miptev 10 ~d10]
 :picky &picky-action [%group-summary [~timluc-miptev %the-collapse]]
-:picky &picky-action [%all-groups ~]
-:picky &picky-action [%alter-cache-ttl ~m1]
-:picky &picky-action [%bust-cache ~]
+:picky &picky-action [%all-chats ~]
 
-::  !!bust cache and then recompute immediately!!
-:picky &picky-action [%bust-cache ~]
-:picky &picky-action [%group-summary [~timluc-miptev %the-collapse]]
-
-::  WORKs
+::  WORKS
 :picky &picky-action [%ban [~bacdul-timzod %dm--timluc-miptev] ~timluc-miptev]
 :picky &picky-action [%ban [~timluc-miptev %the-collapse] ~rivdut-pitryl]
 ```
@@ -51,9 +31,6 @@
 
 ## dbug state
 ```
-::  GET ALL members in The Collapse
-:group-store +dbug [%state '(~(get by groups) [entity=~timluc-miptev name=%the-collapse])']
-
 ::  Check banned members in The Collapse
 :picky +dbug [%state 'banned']
 ```
