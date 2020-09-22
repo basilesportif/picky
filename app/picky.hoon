@@ -8,9 +8,11 @@
     $%  state-0
         state-1
         state-2
+        state-3
     ==
 ::  record banned users since private groups don't record this
 ::
++$  state-3  [%3 =banned]
 +$  state-2  [%2 =banned =chat-cache =gs-cache]
 +$  state-1  [%1 =chat-cache]
 +$  state-0
@@ -18,11 +20,10 @@
     ==
 ::
 +$  card  card:agent:gall
-++  init-gs-cache  [*time ~m10 *group-summaries]
 ::
 --
 %-  agent:dbug
-=|  state-2
+=|  state-3
 =*  state  -
 ^-  agent:gall
 =<
@@ -34,34 +35,34 @@
 ++  on-init
   ^-  (quip card _this)
   ~&  >  '%picky initialized successfully'
-  :-  subscribe-chat-updates:hc
-  this(state [%2 *^banned *^chat-cache init-gs-cache])
+  `this(state [%3 *^banned])
 ++  on-save
   ^-  vase
   !>(state)
 ++  on-load
   |=  old-state=vase
-  ~&  >  '%picky  recompiled successfully'
+  ~&  >  '%picky recompiled successfully'
   ^-  (quip card _this)
   =/  old  !<(versioned-state old-state)
   ?-  -.old
-      %2  `this(state old)
+      %3  `this(state old)
+    ::
+      %2
+    :_  this(state [%3 banned.old])
+    ~[[%pass /leave %agent [our.bowl %chat-store] %leave ~]]
     ::
       %1
-    `this(state [%2 *^banned chat-cache.old init-gs-cache])
+    :_  this(state [%3 *^banned])
+    ~[[%pass /leave %agent [our.bowl %chat-store] %leave ~]]
     ::
       %0
-    :-  subscribe-chat-updates:hc
-    this(state [%2 *^banned *^chat-cache init-gs-cache])
+    `this(state [%3 *^banned])
   ==
 ++  on-poke
   |=  [=mark =vase]
   ^-  (quip card _this)
   ?>  (team:title [our src]:bowl)
   |^
-  ::  refresh group-summaries cache on every request
-  ::
-  =.  state  (load-group-summaries:hc %.n)
   =^  cards  state
   ?+    mark  (on-poke:def mark vase)
       %picky-action
@@ -73,24 +74,17 @@
     ^-  (quip card _state)
     ?-    -.action
         %messages
-      =/  msgs=(list msg)
-        (user-group-msgs:hc +.action)
-      ~&  >>  msgs
+      ~&  >>  %+  turn  (user-group-msgs:hc +.action)
+              |=([=msg] [chat-path.msg when.e.msg letter.e.msg])
       `state
       ::
         %group-summary
-      ~&  >>  (~(get by gs.gs-cache.state) rid.action)
+      ~&  >>  (group-info:hc rid.action)
       `state
       ::
-        %all-groups
-      ~&  >>  gs.gs-cache.state
+        %all-chats
+      ~&  >>  my-chats-by-group:hc
       `state
-      ::
-        %bust-cache
-      `bust-cache
-      ::
-        %alter-cache-ttl
-      `state(ttl.gs-cache ttl.action)
       ::
       ::  actual banning happens when our poke is acked
       ::
@@ -108,9 +102,6 @@
       %poke
       [%group-update !>([%remove-members rid (sy ~[user])])]
     ==
-  ++  bust-cache
-    ^-  state-2
-    [%2 banned *^chat-cache init-gs-cache]
   --
 ++  on-agent
   |=  [=wire =sign:agent:gall]
@@ -124,41 +115,13 @@
       [(slav %p i.t.wire) i.t.t.wire]
     =/  user=ship  (slav %p i.t.t.t.wire)
     (ban rid user)
-  ?+    -.sign  (on-agent:def wire sign)
-      %fact
-    ?+    p.cage.sign  (on-agent:def wire sign)
-        %chat-update
-      (handle-chat-update !<(update:store q.cage.sign))
-    ==
-  ==
+  `this
   ++  ban
     |=  [rid=resource user=ship]
     ^-  (quip card _this)
-    ~&  >>  "banned {<user>} from {<rid>}"
+    ~&  >>  "banned {<user>} from {<rid>} "
     =.  banned.state  (~(put ju banned.state) rid user)
     `this
-  ++  handle-chat-update
-    |=  =update:store
-    ^-  (quip card _this)
-    ?+    update  `this
-        [%messages *]
-      ~&  >>>  "%messages: {<path.update>}; {<start.update>}, {<end.update>}"
-      `this(chat-cache (insert-envelopes path.update envelopes.update))
-        [%message * *]
-      ~&  >>  "%message: {<when.envelope.update>}"
-      `this(chat-cache (insert-envelopes path.update ~[envelope.update]))
-    ==
-  ++  insert-envelopes
-    |=  [pax=path es=(list envelope:store)]
-    |-  ^+  chat-cache
-    ?~  es
-      chat-cache
-    =*  k  [pax author.i.es]
-    ~&  >>  "checking: {<k>}"
-    ?.  (~(has by chat-cache) k)
-      $(es t.es)
-    ~&  >  "adding: {<k>}, {<i.es>}"
-    $(chat-cache (~(add ja chat-cache) k i.es), es t.es)
   --
 ::
 ++  on-watch  on-watch:def
@@ -172,158 +135,94 @@
 ::
 |_  =bowl:gall
 +*  grp  ~(. group-lib bowl)
-++  subscribe-chat-updates
-  ^-  (list card)
-  ?:  %-  ~(any in `(set [wire ship term])`~(key by wex.bowl))
-        |=([=wire *] ?=([%chat-store-updates ~] wire))
-    ~
-  ~[[%pass /chat-store-updates %agent [our.bowl %chat-store] %watch /updates]]
-::  uses gs-cache in state, regardless of staleness
-::
++$  omsgs  ((mop msg $~) msg-after)
+++  orm  ((ordered-map msg $~) msg-after)
+++  tap-omsgs
+  |=  ms=omsgs
+  (turn (tap:orm ms) |=([m=msg *] m))
 ++  user-group-msgs
-  |=  [group-rid=resource user=ship num-msgs=@]
+  |=  [group-rid=resource user=ship num-msgs=@ cutoff=@dr]
   ^-  (list msg)
-  =/  gs=(unit group-summary)
-    (~(get by gs.gs-cache.state) group-rid)
-  ?~  gs  ~
-  =|  acc=(list msg)
+  =|  ms=omsgs
+  =/  chats=(list chat-meta)
+    ~(tap in (~(gut by my-chats-by-group) group-rid *(set chat-meta)))
   |-
-  ?:  =(0 num-msgs)  (flop acc)
-  =^  m=(unit msg)  chat-cache.state
-    (pop-newest-msg ~(tap in chats.u.gs) user chat-cache.state)
-  ?~  m  (flop acc)
-  $(acc [u.m acc], num-msgs (dec num-msgs))
-::  pops the newest msg for user in list of chats; returns updated chat-cache
+  ?~  chats  (scag num-msgs (tap-omsgs ms))
+  %_  $
+      ms  (process-mailbox chat-path.i.chats user num-msgs cutoff ms)
+      chats  t.chats
+  ==
 ::
-++  pop-newest-msg
-  |=  [chats=(list path) user=ship cc=^chat-cache]
-  ^-  [(unit msg) _cc]
-  =/  ms=(list msg)
-    %+  murn  chats
-    |=(cp=path (first-msg cp user cc))
-  =/  sorted=(list msg)
-    (sort ms |=([m1=msg m2=msg] (gte when.e.m1 when.e.m2)))
-  ?~  sorted  [~ cc]
-  =*  k  [chat-path.i.sorted user]
-  =.  cc
-    %+  ~(put by cc)  k
-    (slag 1 (~(gut by cc) k ~))
-  [`i.sorted cc]
-++  first-msg
-  |=  [cp=path user=ship cc=^chat-cache]
-  ^-  (unit msg)
-  =/  e=(list envelope.store)
-    (~(gut by cc) [cp user] ~)
-  ?~  e  ~
-  `[cp i.e]
-::
-::
-++  update-chat-cache
-  |=  xs=(list [* chat-path=app-path:md])
-  =*  ccs  chat-cache.state
-  |-  ^-  ^chat-cache
-  ?~  xs  ccs
-  =/  m=(unit mailbox:store)
-    (scry-mailbox chat-path.i.xs)
-  ?~  m  $(xs t.xs)
-  $(xs t.xs, ccs (cache-mailbox chat-path.i.xs u.m))
-::  caches a chat-store if it's uncached
-::
-++  cache-mailbox
-  |=  [chat-path=path m=mailbox:store]
-  ^-  ^chat-cache
-  =*  ccs  chat-cache.state
-  ?~  envelopes.m  ccs
-  ::  only do initial cache for chat/author that isn't present
-  ?:  (~(has by ccs) [chat-path author.i.envelopes.m])
-    ccs
-  =/  es  (flop envelopes.m)
+++  process-mailbox
+  |=  [=chat-path user=ship num-msgs=@ cutoff=@dr ms=omsgs]
+  ^-  omsgs
+  =/  mailbox  (scry-mailbox chat-path)
+  ?~  mailbox  ms
+  =/  es  envelopes.u.mailbox
+  =|  seen=@
   |-
-  ?~  es  ccs
-  =*  k  [chat-path author.i.es]
-  =/  user-msgs=(list envelope:store)
-    (~(gut by ccs) k ~)
-  =.  ccs  (~(put by ccs) k [i.es user-msgs])
-  $(es t.es)
+  ?~  es  ms
+  ?:  (gte seen num-msgs)  ms
+  ?.  (after-date cutoff when.i.es)  ms
+  ?.  =(user author.i.es)  $(es t.es)
+  $(es t.es, seen +(seen), ms (put:orm ms [chat-path i.es] ~))
 ::
-::
-::  recomputes group-summaries and chat-cache if gs-cache expired
-::
-++  load-group-summaries
-  |=  force-refresh=?
-  ^-  _state
-  ?:  ?&  (gte (add updated.gs-cache ttl.gs-cache) now.bowl)
-          ?!(force-refresh)
-      ==
-    state
-  =/  mgc  my-groups-chats
-  =.  chat-cache.state  (update-chat-cache mgc)
-  =.  gs-cache.state  [now.bowl ttl.gs-cache (summarize-groups mgc)]
-  state
-::  do NOT call this directly; use load-group-summaries to get caching
-::
-++  summarize-groups
-  ~&  >>  "summarize-groups: recomputing groups-chats cache"
-  |=  xs=(list [gp=group-path:md chat-path=app-path:md])
-  ^-  group-summaries
-  =|  gs=group-summaries
-  |-
-  ?~  xs  gs
-  =/  rid=resource
-    (de-path:resource gp.i.xs)
+++  group-info
+  |=  rid=resource:resource
+  ^-  group-stats
+  =|  gs=group-stats
   =/  g=(unit group:group)
     (scry-group:grp rid)
-  ?~  g  $(xs t.xs)
-  =/  gsum=group-summary
-    (~(gut by gs) rid (init-group-summary u.g))
-  =.  chats.gsum
-    (~(put in chats.gsum) chat-path.i.xs)
-  =.  stats.gsum
-    (calc-stats stats.gsum chat-path.i.xs)
-  $(xs t.xs, gs (~(put by gs) rid gsum))
-++  init-group-summary
-  |=  [g=group:group]
-  ^-  group-summary
-  :-  *(set path)
-  %-  malt
-  %+  turn  ~(tap in (all-members g))
-  |=(user=ship [user *user-summary])
+  ?~  g  gs
+  =/  stats=(map ship user-summary)
+    %-  malt
+    %+  turn  ~(tap in (all-members u.g))
+    |=(user=ship [user *user-summary])
+  =/  chats=(set chat-meta)
+    (~(gut by my-chats-by-group) rid *(set chat-meta))
+  =/  cs  ~(tap in chats)
+  |-
+  ?~  cs  [chats stats]
+  =.  stats
+    (calc-stats stats chat-path.i.cs)
+  $(cs t.cs)
 ::  includes admins members to handle DM case
 ::
 ++  all-members
   |=  g=group:group
+  ^-  (set ship)
   =/  admins=(set ship)
     (~(gut by tags.g) %admin *(set ship))
   (~(uni in admins) members.g)
 ++  calc-stats
-  |=  [stats=(map ship user-summary) chat-path=path]
-  =/  num-msgs=@  10
+  |=  [stats=(map ship user-summary) =chat-path]
   =/  users=(list ship)
     ~(tap in ~(key by stats))
+  =/  mailbox  (scry-mailbox chat-path)
+  ?~  mailbox  stats
+  =/  es  envelopes.u.mailbox
   |-  ^+  stats
   ?~  users  stats
   =/  us=user-summary
     (~(got by stats) i.users)
-  =/  es=(list envelope:store)
-    (~(gut by chat-cache) [chat-path i.users] ~)
   =.  stats
-    %+  ~(put by stats)  i.users
-    (update-user-summary us es)
+  %+  ~(put by stats)  i.users
+    (update-user-summary i.users us es)
   $(users t.users)
 ++  update-user-summary
-
-  |=  [us=user-summary msgs=(list envelope:store)]
+  |=  [user=ship us=user-summary es=(list envelope:store)]
   |-  ^-  user-summary
-  ?~  msgs  us
-  ?.  (after-date ~d30 when.i.msgs)  us
+  ?~  es  us
+  ?.  (after-date ~d30 when.i.es)  us
+  ?.  =(author.i.es user)  $(es t.es)
   =.  us
-    :*  ?:((after-date ~d7 when.i.msgs) +(num-week.us) num-week.us)
+    :*  ?:((after-date ~d7 when.i.es) +(num-week.us) num-week.us)
         +(num-month.us)
     ==
-  $(msgs t.msgs)
+  $(es t.es)
 ++  after-date
   |=  [interval=@dr d=@da]
-  (gte d (sub now.bowl interval))
+  ^-  ?  (gte d (sub now.bowl interval))
 ::
 ::
 ++  is-my-group
@@ -338,22 +237,40 @@
   =/  admins=(set ship)
     (~(gut by tags.u.g) %admin *(set ship))
   (~(has in admins) our.bowl)
-++  my-groups-chats
-  ^-  (list [group-path:md app-path:md])
-  =/  xs=(list [group-path:md app-path:md])
-    %~  tap  in
-    =/  ai=(jug app-name:md [group-path:md app-path:md])
-      .^
-       (jug app-name:md [group-path:md app-path:md])
-       %gy
-       (scot %p our.bowl)
-       %metadata-store
-       (scot %da now.bowl)
-       /app-indices
-      ==
-    (~(gut by ai) %chat *(set [group-path:md app-path:md]))
-  %+  skim  xs
-  |=([g=group-path:md *] (is-my-group g))
+++  my-chats-by-group
+  ^-  (jug resource:resource chat-meta)
+  =/  mc  my-chats
+  =|  metas=(jug resource:resource chat-meta)
+  |-
+  ?~  mc  metas
+  =.  metas
+    (~(put ju metas) rid.i.mc [app-path.i.mc title.i.mc])
+  $(mc t.mc)
+++  my-chats
+  ^-  (list [rid=resource:resource =app-path:md title=@t])
+  %+  turn
+    %+  skim  ~(tap by (scry-md-assocs %chat))
+    |=([[gp=group-path:md *] *] (is-my-group gp))
+  |=([[gp=group-path:md @ ap=app-path:md] m=metadata:md] [(de-path:resource gp) ap title.m])
+++  my-group-names
+  ^-  group-names
+  %-  ~(gas by *group-names)
+    %+  turn
+      %+  skim  ~(tap by (scry-md-assocs %contacts))
+      |=([[gp=group-path:md *] *] (is-my-group gp))
+    |=([[gp=group-path:md *] m=metadata:md] [(de-path:resource gp) title.m])
+++  msg-after
+  |=  [m1=msg m2=msg]
+  ^-  ?  (gth when.e.m1 when.e.m2)
+++  scry-md-assocs
+  |=  app=app-name:md
+  .^  associations:md
+     %gx
+     (scot %p our.bowl)
+     %metadata-store
+     (scot %da now.bowl)
+     /app-name/[app]/noun
+    ==
 ++  scry-mailbox
   |=  pax=path
   .^
