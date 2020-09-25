@@ -54,8 +54,6 @@
   |^  ^-  (quip card _this)
   ?+    path  (on-watch:def path)
       [%primary ~]
-    ~&  >  "got %primary subscription"
-    ~&  >>  scry-group-metas
     :_  this
     ~[[%give %fact ~[/primary] [%json !>((group-metas:enjs:view scry-group-metas))]]]
   ==

@@ -152,7 +152,7 @@
 +*  grp  ~(. group-lib bowl)
 ++  dummy-group-metas
   ^-  (set group-meta)
-  (sy ~[['My Cool Group' *group-stats]])
+  (sy ~[['The Collapse' [~timluc-miptev %the-collapse] [(sy ~[[/stupid-chat 'A Stupid Chat'] [/dumb-chat 'Very Dumb Stuff']]) *(map ship user-summary)]]])
 +$  omsgs  ((mop msg $~) msg-after)
 ++  orm  ((ordered-map msg $~) msg-after)
 ++  tap-omsgs
