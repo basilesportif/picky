@@ -29,6 +29,12 @@
 :picky &picky-action [%group-summary [~bacdul-timzod %dm--timluc-miptev]]
 ```
 
+## `on-peek` scrys
+```
+=picky -build-file %/sur/picky/hoon
+.^((set group-meta:picky) %gx /=picky=/groups/noun)
+```
+
 ## dbug state
 ```
 ::  Check banned members in The Collapse

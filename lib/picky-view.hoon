@@ -1,8 +1,15 @@
-/-  sur=picky-view
+/-  sur=picky-view, picky
 ^?
 =<  [sur .]
 =,  sur
 |%
+++  enjs
+  |%
+  ++  group-metas
+    |=  gms=(set group-meta:picky)
+    ^-  json
+    (json [%s 'poopman'])
+  --
 ++  dejs
   |%
   ++  action

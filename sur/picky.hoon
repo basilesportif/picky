@@ -12,6 +12,7 @@
 +$  chat-path   path
 +$  group-names  (map resource @t)
 +$  chat-meta   [=chat-path name=@t]
++$  group-meta  [name=@t stats=group-stats]
 ::  envelope marked with chat path
 ::
 +$  msg  [=chat-path e=envelope:store]
@@ -33,3 +34,4 @@
 +$  chat-cache  (jar [path ship] envelope:store)
 +$  gs-cache  [updated=time ttl=@dr gs=group-summaries]
 --
+

@@ -1,6 +1,7 @@
 ::  picky-view.hoon
 ::  handle view actions
 ::
+/-  picky
 /+  dbug, default-agent, view=picky-view
 |%
 +$  versioned-state
@@ -50,12 +51,26 @@
 ::
 ++  on-watch
   |=  =path
-  ^-  (quip card _this)
+  |^  ^-  (quip card _this)
   ?+    path  (on-watch:def path)
       [%primary ~]
     ~&  >  "got %primary subscription"
-    `this
-==
+    ~&  >>  scry-group-metas
+    :_  this
+    ~[[%give %fact ~[/primary] [%json !>((group-metas:enjs:view scry-group-metas))]]]
+  ==
+  ++  scry-group-metas
+    .^
+      (set group-meta:picky)
+      %gx
+      (scot %p our.bowl)
+      %picky
+      (scot %da now.bowl)
+      %groups
+      %noun
+      ~
+    ==
+  --
 ++  on-leave  on-leave:def
 ++  on-peek   on-peek:def
 ++  on-agent  on-agent:def

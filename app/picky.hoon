@@ -1,6 +1,9 @@
 ::  picky.hoon
 ::  chat admin dashboard backend
 ::
+::  +peek paths
+::  /groups                 (set group-meta)
+::
 /-  *picky, md=metadata-store, store=chat-store, group, *resource
 /+  dbug, default-agent, group-lib=group, resource
 |%
@@ -72,7 +75,7 @@
   ++  poke-action
     |=  =action
     ^-  (quip card _state)
-    ?-    -.action
+    ?-  -.action
         %messages
       ~&  >>  %+  turn  (user-group-msgs:hc +.action)
               |=([=msg] [chat-path.msg when.e.msg letter.e.msg])
@@ -124,9 +127,21 @@
     `this
   --
 ::
+++  on-peek
+  |=  pax=path
+  ^-  (unit (unit cage))
+  ?+  pax  (on-peek:def pax)
+      [%x %groups ~]
+    =/  =group-names  my-group-names:hc
+    =/  group-metas=(set group-meta)
+      dummy-group-metas:hc
+::      %-  ~(run in ~(key by group-names))
+::      |=  rid=resource
+::      [(~(got by group-names) rid) (group-info:hc rid)]
+    ``noun+!>(group-metas)
+  ==
 ++  on-watch  on-watch:def
 ++  on-leave  on-leave:def
-++  on-peek   on-peek:def
 ++  on-arvo   on-arvo:def
 ++  on-fail   on-fail:def
 --
@@ -135,6 +150,9 @@
 ::
 |_  =bowl:gall
 +*  grp  ~(. group-lib bowl)
+++  dummy-group-metas
+  ^-  (set group-meta)
+  (sy ~[['My Cool Group' *group-stats]])
 +$  omsgs  ((mop msg $~) msg-after)
 ++  orm  ((ordered-map msg $~) msg-after)
 ++  tap-omsgs
@@ -238,9 +256,9 @@
     (~(gut by tags.u.g) %admin *(set ship))
   (~(has in admins) our.bowl)
 ++  my-chats-by-group
-  ^-  (jug resource:resource chat-meta)
+  ^-  (jug resource chat-meta)
   =/  mc  my-chats
-  =|  metas=(jug resource:resource chat-meta)
+  =|  metas=(jug resource chat-meta)
   |-
   ?~  mc  metas
   =.  metas
