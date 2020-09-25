@@ -48,7 +48,14 @@
     `this
   --
 ::
-++  on-watch  on-watch:def
+++  on-watch
+  |=  =path
+  ^-  (quip card _this)
+  ?+    path  (on-watch:def path)
+      [%primary ~]
+    ~&  >  "got %primary subscription"
+    `this
+==
 ++  on-leave  on-leave:def
 ++  on-peek   on-peek:def
 ++  on-agent  on-agent:def
