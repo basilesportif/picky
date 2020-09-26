@@ -19,12 +19,12 @@ done
 
 if [ -z "$WATCH_MODE" ]; then
     echo "Installed %picky"
-    rsync -r --exclude '.*' --exclude '*.sh' --exclude '*.md' * $PIER/
+    rsync -r --exclude '.*' --exclude 'frontend*' --exclude '*.sh' --exclude '*.md' * $PIER/
 else
    echo "Watching for changes to copy to ${PIER}..."
    while [ 0 ]
    do
     sleep 0.8
-    rsync -r --exclude '.*' --exclude '*.sh' --exclude '*.md' * $PIER/
+    rsync -r --exclude '.*'  --exclude 'frontend*' --exclude '*.sh' --exclude '*.md' * $PIER/
    done
 fi

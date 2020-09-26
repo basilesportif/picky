@@ -1,8 +1,7 @@
 ::  picky-view.hoon
 ::  handle view actions
 ::
-/-  picky
-/+  dbug, default-agent, view=picky-view
+/+  dbug, default-agent, view=picky-view, picky
 |%
 +$  versioned-state
     $%  state-0
@@ -23,7 +22,7 @@
 ::
 ++  on-init
   ^-  (quip card _this)
-  ~&  >  '%picky-view initialized successfully'
+  ~&  >  '%picky-view initialized  successfully'
   =/  filea  [%file-server-action !>([%serve-dir /'~picky' /app/picky-view %.n %.y])]
   :_  this
   :~  [%pass /srv %agent [our.bowl %file-server] %poke filea]
@@ -55,7 +54,7 @@
   ?+    path  (on-watch:def path)
       [%primary ~]
     :_  this
-    ~[[%give %fact ~[/primary] [%json !>((group-metas:enjs:view scry-group-metas))]]]
+    ~[[%give %fact ~[/primary] [%json !>((group-metas:enjs:picky scry-group-metas))]]]
   ==
   ++  scry-group-metas
     .^
