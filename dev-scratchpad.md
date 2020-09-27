@@ -15,8 +15,8 @@
 
 ## picky actions
 ```
-:picky &picky-action [%messages [~timluc-miptev %the-collapse] ~timluc-miptev 10 ~d10]
-:picky &picky-action [%group-summary [~timluc-miptev %the-collapse]]
+:picky &picky-action [%group-summary [~timluc-miptev '---the-collapse-3.1--secure-the-bag']]
+:picky &picky-action [%messages [~timluc-miptev '---the-collapse-3.1--secure-the-bag'] ~timluc-miptev 10 ~d10]
 :picky &picky-action [%all-chats ~]
 
 ::  WORKS

@@ -5,10 +5,10 @@
       [%group-summary rid=resource]
       [%all-chats ~]
       [%ban rid=resource user=ship]
+      [%ignore rid=resource]
   ==
-:: all messages for a user in a chat, newest first
-::
 +$  banned  (jug resource ship)
++$  ignored  (set resource)
 +$  chat-path   path
 +$  group-names  (map resource @t)
 +$  chat-meta   [=chat-path name=@t]

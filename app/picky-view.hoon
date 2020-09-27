@@ -1,7 +1,8 @@
 ::  picky-view.hoon
 ::  handle view actions
 ::
-/+  dbug, default-agent, view=picky-view, picky
+/-  picky
+/+  dbug, default-agent, view=picky-view, picky-lib=picky
 |%
 +$  versioned-state
     $%  state-0
@@ -54,7 +55,7 @@
   ?+    path  (on-watch:def path)
       [%primary ~]
     :_  this
-    ~[[%give %fact ~[/primary] [%json !>((group-metas:enjs:picky scry-group-metas))]]]
+    ~[[%give %fact ~[/primary] [%json !>((group-metas:enjs:picky-lib scry-group-metas))]]]
   ==
   ++  scry-group-metas
     .^

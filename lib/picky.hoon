@@ -1,18 +1,16 @@
-/-  sur=picky
+/-  picky
 /+  *resource
 ^?
-=<  [sur .]
-=,  sur
 |%
 ++  enjs
   =,  enjs:format
   |%
   ++  group-metas
-    |=  gms=(set group-meta)
+    |=  gms=(set group-meta:picky)
     ^-  json
     [%a (turn ~(tap in gms) group-meta)]
   ++  group-meta
-    |=  gm=group-meta
+    |=  gm=group-meta:picky
     %-  pairs
     :~
       [%name [%s name.gm]]
@@ -22,7 +20,7 @@
     ==
   ::  spat is path to cord; stab is cord to path
   ++  chat-meta
-    |=  cm=chat-meta
+    |=  cm=chat-meta:picky
     %-  pairs
     :~
       [%name [%s name.cm]]

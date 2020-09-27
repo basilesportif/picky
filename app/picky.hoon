@@ -15,7 +15,7 @@
     ==
 ::  record banned users since private groups don't record this
 ::
-+$  state-3  [%3 =banned]
++$  state-3  [%3 =banned =ignored]
 +$  state-2  [%2 =banned =chat-cache =gs-cache]
 +$  state-1  [%1 =chat-cache]
 +$  state-0
@@ -38,7 +38,7 @@
 ++  on-init
   ^-  (quip card _this)
   ~&  >  '%picky initialized successfully'
-  `this(state [%3 *^banned])
+  `this(state [%3 *^banned *^ignored])
 ++  on-save
   ^-  vase
   !>(state)
@@ -51,15 +51,15 @@
       %3  `this(state old)
     ::
       %2
-    :_  this(state [%3 banned.old])
+    :_  this(state [%3 banned.old *^ignored])
     ~[[%pass /leave %agent [our.bowl %chat-store] %leave ~]]
     ::
       %1
-    :_  this(state [%3 *^banned])
+    :_  this(state [%3 *^banned *^ignored])
     ~[[%pass /leave %agent [our.bowl %chat-store] %leave ~]]
     ::
       %0
-    `this(state [%3 *^banned])
+    `this(state [%3 *^banned *^ignored])
   ==
 ++  on-poke
   |=  [=mark =vase]
@@ -94,6 +94,8 @@
         %ban
       :_  state
       ~[(ban-user rid.action user.action)]
+        %ignore
+      `state(ignored (~(put in ignored) rid.action))
     ==
   ++  ban-user
     |=  [rid=resource user=ship]
@@ -134,10 +136,10 @@
       [%x %groups ~]
     =/  =group-names  my-group-names:hc
     =/  group-metas=(set group-meta)
-      dummy-group-metas:hc
-::      %-  ~(run in ~(key by group-names))
-::      |=  rid=resource
-::      [(~(got by group-names) rid) (group-info:hc rid)]
+::      dummy-group-metas:hc
+      %-  ~(run in ~(key by group-names))
+      |=  rid=resource
+      [(~(got by group-names) rid) rid (group-info:hc rid)]
     ``noun+!>(group-metas)
   ==
 ++  on-watch  on-watch:def
@@ -247,6 +249,8 @@
   |=  gp=group-path:md
   =/  rid=resource
     (de-path:resource gp)
+  ?:  (~(has in ignored) rid)
+    %.n
   ?:  =(entity.rid our.bowl)
     %.y
   =/  g=(unit group:group)
