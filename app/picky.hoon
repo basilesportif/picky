@@ -76,9 +76,12 @@
     |=  =action
     ^-  (quip card _state)
     ?-  -.action
-        %messages
+        %messages-by-group
       ~&  >>  %+  turn  (user-group-msgs:hc +.action)
               |=([=msg] [chat-path.msg when.e.msg letter.e.msg])
+      `state
+      ::
+        %all-messages
       `state
       ::
         %group-summary
@@ -87,7 +90,7 @@
       ::
         %all-chats
       =/  chats=(jug resource chat-meta)
-        (chats-by-group:hc only-mine.action)
+        ?:(only-mine.action my-chats-by-group:hc all-chats-by-group:hc)
       ~&  >>  chats
       `state
       ::
@@ -159,11 +162,16 @@
   |=  ms=omsgs
   (turn (tap:orm ms) |=([m=msg *] m))
 ++  user-group-msgs
-  |=  [group-rid=resource user=ship num-msgs=@ cutoff=@dr]
+  |=  [group-rids=(set resource) user=ship num-msgs=@ cutoff=@dr]
   ^-  (list msg)
+  :: make group-rid a list, and loop through it also. Maybe collect all chat-metas into one list first?
   =|  ms=omsgs
   =/  chats=(list chat-meta)
-    ~(tap in (~(gut by all-chats-by-group) group-rid *(set chat-meta)))
+    %-  zing
+    %+  turn  ~(tap in group-rids)
+      |=  group-rid=resource
+      ^-  (list chat-meta)
+      ~(tap in (~(gut by all-chats-by-group) group-rid *(set chat-meta)))
   |-
   ?~  chats  (scag num-msgs (tap-omsgs ms))
   %_  $
@@ -258,7 +266,7 @@
     (~(gut by tags.u.g) %admin *(set ship))
   (~(has in admins) our.bowl)
 ::
-++  chats-by-group
+++  get-chats-by-group
   |=  only-mine=?
   ^-  (jug resource chat-meta)
   =/  mc  ?:(only-mine my-chats (all-chats %.n))
@@ -269,30 +277,41 @@
     (~(put ju metas) rid.i.mc [app-path.i.mc title.i.mc])
   $(mc t.mc)
 ++  all-chats-by-group
-  (chats-by-group %.n)
+  (get-chats-by-group %.n)
 ::
 ++  my-chats-by-group
-  (chats-by-group %.y)
+  (get-chats-by-group %.y)
+::
+++  group-filter
+  |=  only-mine=?
+  ^-  $-(group-path:md ?)
+  ?:(only-mine is-my-group |=(group-path:md %.y))
 ::
 ++  all-chats
   |=  only-mine=?
-  =/  group-filter=$-(group-path:md ?)
-    ?:(only-mine is-my-group |=(group-path:md %.y))
   ^-  (list [rid=resource:resource =app-path:md title=@t])
   %+  turn
   %+  skim  ~(tap by (scry-md-assocs %chat))
-    |=([[gp=group-path:md *] *] (group-filter gp))
+    |=([[gp=group-path:md *] *] ((group-filter only-mine) gp))
   |=([[gp=group-path:md @ ap=app-path:md] m=metadata:md] [(de-path:resource gp) ap title.m])
 ++  my-chats
   ^-  (list [rid=resource:resource =app-path:md title=@t])
   (all-chats %.y)
-++  my-group-names
+++  get-group-names
+  |=  only-mine=?
   ^-  group-names
   %-  ~(gas by *group-names)
     %+  turn
       %+  skim  ~(tap by (scry-md-assocs %contacts))
-      |=([[gp=group-path:md *] *] (is-my-group gp))
+      |=([[gp=group-path:md *] *] ((group-filter only-mine) gp))
     |=([[gp=group-path:md *] m=metadata:md] [(de-path:resource gp) title.m])
+::
+++  all-group-names
+  (get-group-names %.n)
+::
+++  my-group-names
+  (get-group-names %.y)
+::
 ++  msg-after
   |=  [m1=msg m2=msg]
   ^-  ?  (gth when.e.m1 when.e.m2)

@@ -16,7 +16,7 @@
 ## picky actions
 ```
 :picky &picky-action [%group-summary [~timluc-miptev '---the-collapse-3.1--secure-the-bag']]
-:picky &picky-action [%messages [~timluc-miptev '---the-collapse-3.1--secure-the-bag'] ~timluc-miptev 10 ~d10]
+:picky &picky-action [%messages-by-group (sy ~[[~timluc-miptev '---the-collapse-3.1--secure-the-bag']]) ~timluc-miptev 10 ~d10]
 
 ::  now can pass `%.n` to get groups/chats that I'm NOT an admin of
 :picky &picky-action [%all-chats %.y]

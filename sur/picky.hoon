@@ -1,7 +1,8 @@
 /-  *resource, store=chat-store
 |%
 +$  action
-  $%  [%messages rid=resource user=ship num-msgs=@ cutoff=@dr]
+  $%  [%messages-by-group rids=(set resource) user=ship num-msgs=@ cutoff=@dr]
+      [%all-messages user=ship num-msgs=@ cutoff=@dr]
       [%group-summary rid=resource]
       [%all-chats only-mine=?]
       [%ban rid=resource user=ship]
@@ -34,3 +35,4 @@
 +$  chat-cache  (jar [path ship] envelope:store)
 +$  gs-cache  [updated=time ttl=@dr gs=group-summaries]
 --
+
