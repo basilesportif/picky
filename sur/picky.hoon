@@ -5,13 +5,14 @@
       [%group-summary rid=resource]
       [%all-chats ~]
       [%ban rid=resource user=ship]
+      [%ignore rid=resource]
   ==
-:: all messages for a user in a chat, newest first
-::
 +$  banned  (jug resource ship)
++$  ignored  (set resource)
 +$  chat-path   path
 +$  group-names  (map resource @t)
 +$  chat-meta   [=chat-path name=@t]
++$  group-meta  [name=@t rid=resource stats=group-stats]
 ::  envelope marked with chat path
 ::
 +$  msg  [=chat-path e=envelope:store]

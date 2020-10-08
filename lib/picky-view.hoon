@@ -1,4 +1,5 @@
 /-  sur=picky-view
+/+  resource
 ^?
 =<  [sur .]
 =,  sur
