@@ -6,7 +6,7 @@
       [%group-summary rid=resource]
       [%chats-groups only-mine=?]
       [%ban rid=resource user=ship]
-      [%ignore rid=resource]
+      [%ignore rid=resource]                  ::  groups you don't want included in summaries (e.g. DMs)
   ==
 +$  banned  (jug resource ship)
 +$  ignored  (set resource)
