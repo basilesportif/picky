@@ -3,7 +3,7 @@
 +$  action
   $%  [%messages rid=resource user=ship num-msgs=@ cutoff=@dr]
       [%group-summary rid=resource]
-      [%all-chats ~]
+      [%all-chats only-mine=?]
       [%ban rid=resource user=ship]
       [%ignore rid=resource]
   ==

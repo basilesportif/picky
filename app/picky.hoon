@@ -86,7 +86,9 @@
       `state
       ::
         %all-chats
-      ~&  >>  my-chats-by-group:hc
+      =/  chats=(jug resource chat-meta)
+        (chats-by-group:hc only-mine.action)
+      ~&  >>  chats
       `state
       ::
       ::  actual banning happens when our poke is acked
@@ -136,7 +138,6 @@
       [%x %groups ~]
     =/  =group-names  my-group-names:hc
     =/  group-metas=(set group-meta)
-::      dummy-group-metas:hc
       %-  ~(run in ~(key by group-names))
       |=  rid=resource
       [(~(got by group-names) rid) rid (group-info:hc rid)]
@@ -152,9 +153,6 @@
 ::
 |_  =bowl:gall
 +*  grp  ~(. group-lib bowl)
-++  dummy-group-metas
-  ^-  (set group-meta)
-  (sy ~[['The Collapse' [~timluc-miptev %the-collapse] [(sy ~[[/stupid-chat 'A Stupid Chat'] [/dumb-chat 'Very Dumb Stuff']]) *(map ship user-summary)]]])
 +$  omsgs  ((mop msg $~) msg-after)
 ++  orm  ((ordered-map msg $~) msg-after)
 ++  tap-omsgs
@@ -246,7 +244,7 @@
 ::
 ::
 ++  is-my-group
-  |=  gp=group-path:md
+  |=  gp=group-path:md  ^-  ?
   =/  rid=resource
     (de-path:resource gp)
   ?:  (~(has in ignored) rid)
@@ -259,21 +257,35 @@
   =/  admins=(set ship)
     (~(gut by tags.u.g) %admin *(set ship))
   (~(has in admins) our.bowl)
-++  my-chats-by-group
+::
+++  chats-by-group
+  |=  only-mine=?
   ^-  (jug resource chat-meta)
-  =/  mc  my-chats
+  =/  mc  ?:(only-mine my-chats (all-chats %.n))
   =|  metas=(jug resource chat-meta)
   |-
   ?~  mc  metas
   =.  metas
     (~(put ju metas) rid.i.mc [app-path.i.mc title.i.mc])
   $(mc t.mc)
-++  my-chats
+++  all-chats-by-group
+  (chats-by-group %.n)
+::
+++  my-chats-by-group
+  (chats-by-group %.y)
+::
+++  all-chats
+  |=  only-mine=?
+  =/  group-filter=$-(group-path:md ?)
+    ?:(only-mine is-my-group |=(group-path:md %.y))
   ^-  (list [rid=resource:resource =app-path:md title=@t])
   %+  turn
-    %+  skim  ~(tap by (scry-md-assocs %chat))
-    |=([[gp=group-path:md *] *] (is-my-group gp))
+  %+  skim  ~(tap by (scry-md-assocs %chat))
+    |=([[gp=group-path:md *] *] (group-filter gp))
   |=([[gp=group-path:md @ ap=app-path:md] m=metadata:md] [(de-path:resource gp) ap title.m])
+++  my-chats
+  ^-  (list [rid=resource:resource =app-path:md title=@t])
+  (all-chats %.y)
 ++  my-group-names
   ^-  group-names
   %-  ~(gas by *group-names)
