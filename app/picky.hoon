@@ -76,8 +76,15 @@
     |=  =action
     ^-  (quip card _state)
     ?-  -.action
-        %messages
+        %messages-by-group
       ~&  >>  %+  turn  (user-group-msgs:hc +.action)
+              |=([=msg] [chat-path.msg when.e.msg letter.e.msg])
+      `state
+      ::
+        %all-messages
+      =/  gns=(set resource)
+        ~(key by all-group-names:hc)
+      ~&  >>  %+  turn  (user-group-msgs:hc gns +.action)
               |=([=msg] [chat-path.msg when.e.msg letter.e.msg])
       `state
       ::
@@ -85,8 +92,10 @@
       ~&  >>  (group-info:hc rid.action)
       `state
       ::
-        %all-chats
-      ~&  >>  my-chats-by-group:hc
+        %chats-groups
+      =/  chats=(jug resource chat-meta)
+        ?:(only-mine.action my-chats-by-group:hc all-chats-by-group:hc)
+      ~&  >>  chats
       `state
       ::
       ::  actual banning happens when our poke is acked
@@ -136,7 +145,6 @@
       [%x %groups ~]
     =/  =group-names  my-group-names:hc
     =/  group-metas=(set group-meta)
-::      dummy-group-metas:hc
       %-  ~(run in ~(key by group-names))
       |=  rid=resource
       [(~(got by group-names) rid) rid (group-info:hc rid)]
@@ -152,20 +160,22 @@
 ::
 |_  =bowl:gall
 +*  grp  ~(. group-lib bowl)
-++  dummy-group-metas
-  ^-  (set group-meta)
-  (sy ~[['The Collapse' [~timluc-miptev %the-collapse] [(sy ~[[/stupid-chat 'A Stupid Chat'] [/dumb-chat 'Very Dumb Stuff']]) *(map ship user-summary)]]])
 +$  omsgs  ((mop msg $~) msg-after)
 ++  orm  ((ordered-map msg $~) msg-after)
 ++  tap-omsgs
   |=  ms=omsgs
   (turn (tap:orm ms) |=([m=msg *] m))
 ++  user-group-msgs
-  |=  [group-rid=resource user=ship num-msgs=@ cutoff=@dr]
+  |=  [group-rids=(set resource) user=ship num-msgs=@ cutoff=@dr]
   ^-  (list msg)
+  :: make group-rid a list, and loop through it also. Maybe collect all chat-metas into one list first?
   =|  ms=omsgs
   =/  chats=(list chat-meta)
-    ~(tap in (~(gut by my-chats-by-group) group-rid *(set chat-meta)))
+    %-  zing
+    %+  turn  ~(tap in group-rids)
+      |=  group-rid=resource
+      ^-  (list chat-meta)
+      ~(tap in (~(gut by all-chats-by-group) group-rid *(set chat-meta)))
   |-
   ?~  chats  (scag num-msgs (tap-omsgs ms))
   %_  $
@@ -199,7 +209,7 @@
     %+  turn  ~(tap in (all-members u.g))
     |=(user=ship [user *user-summary])
   =/  chats=(set chat-meta)
-    (~(gut by my-chats-by-group) rid *(set chat-meta))
+    (~(gut by all-chats-by-group) rid *(set chat-meta))
   =/  cs  ~(tap in chats)
   |-
   ?~  cs  [chats stats]
@@ -246,7 +256,7 @@
 ::
 ::
 ++  is-my-group
-  |=  gp=group-path:md
+  |=  gp=group-path:md  ^-  ?
   =/  rid=resource
     (de-path:resource gp)
   ?:  (~(has in ignored) rid)
@@ -259,28 +269,53 @@
   =/  admins=(set ship)
     (~(gut by tags.u.g) %admin *(set ship))
   (~(has in admins) our.bowl)
-++  my-chats-by-group
+::
+++  get-chats-by-group
+  |=  only-mine=?
   ^-  (jug resource chat-meta)
-  =/  mc  my-chats
+  =/  mc  ?:(only-mine my-chats (all-chats %.n))
   =|  metas=(jug resource chat-meta)
   |-
   ?~  mc  metas
   =.  metas
     (~(put ju metas) rid.i.mc [app-path.i.mc title.i.mc])
   $(mc t.mc)
-++  my-chats
+++  all-chats-by-group
+  (get-chats-by-group %.n)
+::
+++  my-chats-by-group
+  (get-chats-by-group %.y)
+::
+++  group-filter
+  |=  only-mine=?
+  ^-  $-(group-path:md ?)
+  ?:(only-mine is-my-group |=(group-path:md %.y))
+::
+++  all-chats
+  |=  only-mine=?
   ^-  (list [rid=resource:resource =app-path:md title=@t])
   %+  turn
-    %+  skim  ~(tap by (scry-md-assocs %chat))
-    |=([[gp=group-path:md *] *] (is-my-group gp))
+  %+  skim  ~(tap by (scry-md-assocs %chat))
+    |=([[gp=group-path:md *] *] ((group-filter only-mine) gp))
   |=([[gp=group-path:md @ ap=app-path:md] m=metadata:md] [(de-path:resource gp) ap title.m])
-++  my-group-names
+++  my-chats
+  ^-  (list [rid=resource:resource =app-path:md title=@t])
+  (all-chats %.y)
+++  get-group-names
+  |=  only-mine=?
   ^-  group-names
   %-  ~(gas by *group-names)
     %+  turn
       %+  skim  ~(tap by (scry-md-assocs %contacts))
-      |=([[gp=group-path:md *] *] (is-my-group gp))
+      |=([[gp=group-path:md *] *] ((group-filter only-mine) gp))
     |=([[gp=group-path:md *] m=metadata:md] [(de-path:resource gp) title.m])
+::
+++  all-group-names
+  (get-group-names %.n)
+::
+++  my-group-names
+  (get-group-names %.y)
+::
 ++  msg-after
   |=  [m1=msg m2=msg]
   ^-  ?  (gth when.e.m1 when.e.m2)

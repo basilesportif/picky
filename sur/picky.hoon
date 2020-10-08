@@ -1,11 +1,12 @@
 /-  *resource, store=chat-store
 |%
 +$  action
-  $%  [%messages rid=resource user=ship num-msgs=@ cutoff=@dr]
+  $%  [%messages-by-group rids=(set resource) user=ship num-msgs=@ cutoff=@dr]
+      [%all-messages user=ship num-msgs=@ cutoff=@dr]
       [%group-summary rid=resource]
-      [%all-chats ~]
+      [%chats-groups only-mine=?]
       [%ban rid=resource user=ship]
-      [%ignore rid=resource]
+      [%ignore rid=resource]                  ::  groups you don't want included in summaries (e.g. DMs)
   ==
 +$  banned  (jug resource ship)
 +$  ignored  (set resource)
