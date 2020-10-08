@@ -82,13 +82,17 @@
       `state
       ::
         %all-messages
+      =/  gns=(set resource)
+        ~(key by all-group-names:hc)
+      ~&  >>  %+  turn  (user-group-msgs:hc gns +.action)
+              |=([=msg] [chat-path.msg when.e.msg letter.e.msg])
       `state
       ::
         %group-summary
       ~&  >>  (group-info:hc rid.action)
       `state
       ::
-        %all-chats
+        %chats-groups
       =/  chats=(jug resource chat-meta)
         ?:(only-mine.action my-chats-by-group:hc all-chats-by-group:hc)
       ~&  >>  chats

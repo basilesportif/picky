@@ -15,15 +15,19 @@
 
 ## picky actions
 ```
+::  Info about one group
 :picky &picky-action [%group-summary [~timluc-miptev '---the-collapse-3.1--secure-the-bag']]
 :picky &picky-action [%messages-by-group (sy ~[[~timluc-miptev '---the-collapse-3.1--secure-the-bag']]) ~timluc-miptev 10 ~d10]
 
-::  now can pass `%.n` to get groups/chats that I'm NOT an admin of
-:picky &picky-action [%all-chats %.y]
-:picky &picky-action [%all-chats %.n]
+::  only-mine param sets whether to return only groups I'm an admin of
+:picky &picky-action [%chats-groups %.y]
+:picky &picky-action [%chats-groups %.n]
 
-::  From a different community (I'm not admin)
-:picky &picky-action [%messages [entity=~bitbet-bolbel name=%urbit-community] ~timluc-miptev 10 ~d20]
+::  Chats from multiple groups
+:picky &picky-action [%messages-by-group (sy ~[[~timluc-miptev '---the-collapse-3.1--secure-the-bag'] [entity=~bitbet-bolbel name=%urbit-community]]) ~timluc-miptev 10 ~d10]
+
+::  Chats from all groups
+:picky &picky-action [%all-messages ~timluc-miptev 10 ~d10]
 
 ::  WORKS
 :picky &picky-action [%ban [~bacdul-timzod %dm--timluc-miptev] ~timluc-miptev]
