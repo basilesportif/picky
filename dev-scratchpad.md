@@ -17,9 +17,13 @@
 ```
 :picky &picky-action [%group-summary [~timluc-miptev '---the-collapse-3.1--secure-the-bag']]
 :picky &picky-action [%messages [~timluc-miptev '---the-collapse-3.1--secure-the-bag'] ~timluc-miptev 10 ~d10]
+
 ::  now can pass `%.n` to get groups/chats that I'm NOT an admin of
 :picky &picky-action [%all-chats %.y]
 :picky &picky-action [%all-chats %.n]
+
+::  From a different community (I'm not admin)
+:picky &picky-action [%messages [entity=~bitbet-bolbel name=%urbit-community] ~timluc-miptev 10 ~d20]
 
 ::  WORKS
 :picky &picky-action [%ban [~bacdul-timzod %dm--timluc-miptev] ~timluc-miptev]

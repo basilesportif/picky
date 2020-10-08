@@ -163,7 +163,7 @@
   ^-  (list msg)
   =|  ms=omsgs
   =/  chats=(list chat-meta)
-    ~(tap in (~(gut by my-chats-by-group) group-rid *(set chat-meta)))
+    ~(tap in (~(gut by all-chats-by-group) group-rid *(set chat-meta)))
   |-
   ?~  chats  (scag num-msgs (tap-omsgs ms))
   %_  $
@@ -197,7 +197,7 @@
     %+  turn  ~(tap in (all-members u.g))
     |=(user=ship [user *user-summary])
   =/  chats=(set chat-meta)
-    (~(gut by my-chats-by-group) rid *(set chat-meta))
+    (~(gut by all-chats-by-group) rid *(set chat-meta))
   =/  cs  ~(tap in chats)
   |-
   ?~  cs  [chats stats]
