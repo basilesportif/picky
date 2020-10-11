@@ -5,7 +5,7 @@
 ::  /groups                 (set group-meta)
 ::
 /-  *picky, md=metadata-store, store=chat-store, group, *resource
-/+  dbug, default-agent, group-lib=group, resource
+/+  shoe, dbug, default-agent, group-lib=group, resource
 |%
 +$  versioned-state
     $%  state-0
@@ -22,18 +22,46 @@
     $:  [%0 counter=@]
     ==
 ::
-+$  card  card:agent:gall
++$  card  card:shoe
++$  command
+  $?  %chats-groups
+      %ban
+  ==
 ::
 --
-%-  agent:dbug
 =|  state-3
 =*  state  -
+%-  agent:dbug
 ^-  agent:gall
+%-  (agent:shoe command)
+^-  (shoe:shoe command)
 =<
 |_  =bowl:gall
 +*  this      .
+    des   ~(. (default:shoe this command) bowl)
     def   ~(. (default-agent this %|) bowl)
     hc    ~(. +> bowl)
+::  Shoe Arms
+++  command-parser
+  |=  sole-id=@ta
+  ^+  |~(nail *(like [? command]))
+  %+  stag  &
+  (perk %chats-groups %ban ~)
+::
+++  tab-list
+  |=  sole-id=@ta
+  ^-  (list [@t tank])
+  :~  ['chats-groups' leaf+"Display all chats, grouped by group"]
+      ['ban' leaf+"Ban a user"]
+  ==
+::
+++  on-command      on-command:des
+++  can-connect
+|=  sole-id=@ta  ^-  ?
+(team:title [our src]:bowl)
+++  on-connect      on-connect:des
+++  on-disconnect   on-disconnect:des
+::  Gall Arms
 ::
 ++  on-init
   ^-  (quip card _this)
@@ -61,62 +89,7 @@
       %0
     `this(state [%3 *^banned *^ignored])
   ==
-++  on-poke
-  |=  [=mark =vase]
-  ^-  (quip card _this)
-  ?>  (team:title [our src]:bowl)
-  |^
-  =^  cards  state
-  ?+    mark  (on-poke:def mark vase)
-      %picky-action
-    (poke-action !<(action vase))
-  ==
-  [cards this]
-  ++  poke-action
-    |=  =action
-    ^-  (quip card _state)
-    ?-  -.action
-        %messages-by-group
-      ~&  >>  %+  turn  (user-group-msgs:hc +.action)
-              |=([=msg] [chat-path.msg when.e.msg letter.e.msg])
-      `state
-      ::
-        %all-messages
-      =/  gns=(set resource)
-        ~(key by all-group-names:hc)
-      ~&  >>  %+  turn  (user-group-msgs:hc gns +.action)
-              |=([=msg] [chat-path.msg when.e.msg letter.e.msg])
-      `state
-      ::
-        %group-summary
-      ~&  >>  (group-info:hc rid.action)
-      `state
-      ::
-        %chats-groups
-      =/  chats=(jug resource chat-meta)
-        ?:(only-mine.action my-chats-by-group:hc all-chats-by-group:hc)
-      ~&  >>  chats
-      `state
-      ::
-      ::  actual banning happens when our poke is acked
-      ::
-        %ban
-      :_  state
-      ~[(ban-user rid.action user.action)]
-        %ignore
-      `state(ignored (~(put in ignored) rid.action))
-    ==
-  ++  ban-user
-    |=  [rid=resource user=ship]
-    :*
-      %pass
-      /ban-user/[(scot %p entity.rid)]/[name.rid]/[(scot %p user)]
-      %agent
-      [entity.rid %group-push-hook]
-      %poke
-      [%group-update !>([%remove-members rid (sy ~[user])])]
-    ==
-  --
+++  on-poke  on-poke:def
 ++  on-agent
   |=  [=wire =sign:agent:gall]
   |^  ^-  (quip card _this)
@@ -154,6 +127,7 @@
 ++  on-leave  on-leave:def
 ++  on-arvo   on-arvo:def
 ++  on-fail   on-fail:def
+::
 --
 ::
 ::  HELPER CORE
