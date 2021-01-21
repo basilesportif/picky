@@ -1,4 +1,4 @@
-/-  *resource, store=chat-store
+/-  *resource, store=chat-store, graph-store, post
 |%
 +$  action
   $%  [%messages-by-group rids=(set resource) user=ship num-msgs=@ cutoff=@dr]
@@ -16,7 +16,7 @@
 +$  group-meta  [name=@t rid=resource stats=group-stats]
 ::  envelope marked with chat path
 ::
-+$  msg  [=chat-path e=envelope:store]
++$  msg-node  [=chat-path =post:post]
 +$  user-summary
   $:   num-week=@
        num-month=@
@@ -32,6 +32,6 @@
       stats=(map ship user-summary)
   ==
 +$  group-summaries  (map resource group-summary)
-+$  chat-cache  (jar [path ship] envelope:store)
++$  chat-cache  (jar [path ship] post:post)
 +$  gs-cache  [updated=time ttl=@dr gs=group-summaries]
 --
