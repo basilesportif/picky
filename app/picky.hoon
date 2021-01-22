@@ -45,7 +45,7 @@
   !>(state)
 ++  on-load
   |=  old-state=vase
-  ~&  >  '%picky recompiled successfullyyy'
+  ~&  >  '%picky recompiled successfully'
   ^-  (quip card _this)
   =/  old  !<(versioned-state old-state)
   ?-  -.old
@@ -351,25 +351,27 @@
 ++  safe-get-graph
   |=  =resource
   ^-  (unit update:graph-store)
-  =/  res=(each update:graph-store tang)
-    %-  mule  |.
-    (get-graph:lg resource)
-
-  ?-  -.res
-    %&
-      ?>  ?=(%add-graph -.q.p.res)
-      ?.  =(`%graph-validator-chat mark.q.p.res)
-        ~
-      `p.res
-    %|  ~
-  ==
+  =/  res=(unit update:update:graph-store)  (get-graph resource)
+  ?~  res  ~
+  ?>  ?=(%add-graph -.q.u.res)
+  ?.  =(`%graph-validator-chat mark.q.u.res)
+    ~
+ res
 ++  safe-get-graph-mop
   |=  =resource
   ^-  (unit graph:graph-store)
   =/  res=(unit update:graph-store)  (safe-get-graph resource)
-
   ?~  res  ~
   ?>  ?=(%0 -.u.res)
   ?>  ?=(%add-graph -.q.u.res)
   `graph.q.u.res
+++  get-graph
+  |=  res=resource
+  ^-  (unit update:graph-store)
+  =/  exists=?
+    %.  res
+    =-  ~(has in -)
+    (sy ~(tap by get-keys:lg))
+  ?.  exists  ~
+  `(get-graph:lg res)
 --
