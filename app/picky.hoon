@@ -4,8 +4,8 @@
 ::  +peek paths
 ::  /groups                 (set group-meta)
 ::
-/-  *picky, md=metadata-store, store=chat-store, group, *resource
-/+  dbug, default-agent, group-lib=group, resource
+/-  *picky, md=metadata-store, store=chat-store, group, *resource, graph-store, post
+/+  dbug, default-agent, group-lib=group, resource, lg=graph, graph-store
 |%
 +$  versioned-state
     $%  state-0
@@ -34,6 +34,7 @@
 +*  this      .
     def   ~(. (default-agent this %|) bowl)
     hc    ~(. +> bowl)
+
 ::
 ++  on-init
   ^-  (quip card _this)
@@ -78,14 +79,14 @@
     ?-  -.action
         %messages-by-group
       ~&  >>  %+  turn  (user-group-msgs:hc +.action)
-              |=([=msg] [chat-path.msg when.e.msg letter.e.msg])
+              |=([=msg-node] ~!(msg-node [chat-path.msg-node time-sent.post.msg-node contents.post.msg-node]))
       `state
       ::
         %all-messages
       =/  gns=(set resource)
         ~(key by all-group-names:hc)
       ~&  >>  %+  turn  (user-group-msgs:hc gns +.action)
-              |=([=msg] [chat-path.msg when.e.msg letter.e.msg])
+              |=([=msg-node] [chat-path.msg-node time-sent.post.msg-node contents.post.msg-node])
       `state
       ::
         %group-summary
@@ -159,15 +160,17 @@
 ::  HELPER CORE
 ::
 |_  =bowl:gall
-+*  grp  ~(. group-lib bowl)
-+$  omsgs  ((mop msg $~) msg-after)
-++  orm  ((ordered-map msg $~) msg-after)
++*  this  .
+    grp  ~(. group-lib bowl)
+    lg   ~(. ^lg bowl)
++$  omsgs  ((mop msg-node $~) msg-after)
+++  orm  ((ordered-map msg-node $~) msg-after)
 ++  tap-omsgs
   |=  ms=omsgs
-  (turn (tap:orm ms) |=([m=msg *] m))
+  (turn (tap:orm ms) |=([m=msg-node *] m))
 ++  user-group-msgs
   |=  [group-rids=(set resource) user=ship num-msgs=@ cutoff=@dr]
-  ^-  (list msg)
+  ^-  (list msg-node)
   :: make group-rid a list, and loop through it also. Maybe collect all chat-metas into one list first?
   =|  ms=omsgs
   =/  chats=(list chat-meta)
@@ -186,16 +189,18 @@
 ++  process-mailbox
   |=  [=chat-path user=ship num-msgs=@ cutoff=@dr ms=omsgs]
   ^-  omsgs
-  =/  mailbox  (scry-mailbox chat-path)
-  ?~  mailbox  ms
-  =/  es  envelopes.u.mailbox
+  =/  res=resource  (de-path:resource chat-path)
+  =/  graph=(unit graph:graph-store)  (safe-get-graph-mop res)
+  ?~  graph  ms
+  =/  logs=(list [key=atom val=node:graph-store])  (tap:orm:graph-store u.graph)
   =|  seen=@
   |-
-  ?~  es  ms
+  ?~  logs  ms
   ?:  (gte seen num-msgs)  ms
-  ?.  (after-date cutoff when.i.es)  ms
-  ?.  =(user author.i.es)  $(es t.es)
-  $(es t.es, seen +(seen), ms (put:orm ms [chat-path i.es] ~))
+  =/  msg-node  post.val.i.logs
+  ?.  (after-date cutoff time-sent.msg-node)  ms
+  ?.  =(user author.msg-node)  $(logs t.logs)
+  $(logs t.logs, seen +(seen), ms (put:orm ms [chat-path msg-node] ~))
 ::
 ++  group-info
   |=  rid=resource:resource
@@ -228,28 +233,30 @@
   |=  [stats=(map ship user-summary) =chat-path]
   =/  users=(list ship)
     ~(tap in ~(key by stats))
-  =/  mailbox  (scry-mailbox chat-path)
-  ?~  mailbox  stats
-  =/  es  envelopes.u.mailbox
+  =/  graph=(unit graph:graph-store)  (safe-get-graph-mop (de-path:resource chat-path))
   |-  ^+  stats
   ?~  users  stats
+  ?~  graph  $(users t.users)
   =/  us=user-summary
     (~(got by stats) i.users)
   =.  stats
   %+  ~(put by stats)  i.users
-    (update-user-summary i.users us es)
+    (update-user-summary i.users us u.graph)
   $(users t.users)
+::
 ++  update-user-summary
-  |=  [user=ship us=user-summary es=(list envelope:store)]
+  |=  [user=ship us=user-summary =graph:graph-store]
+  =/  posts  (tap:orm:graph-store graph)
   |-  ^-  user-summary
-  ?~  es  us
-  ?.  (after-date ~d30 when.i.es)  us
-  ?.  =(author.i.es user)  $(es t.es)
+  ?~  posts  us
+  =/  es=post:post  post.val.i.posts
+  ?.  (after-date ~d30 time-sent.es)  us
+  ?.  =(author.es user)  $(posts t.posts)
   =.  us
-    :*  ?:((after-date ~d7 when.i.es) +(num-week.us) num-week.us)
+    :*  ?:((after-date ~d7 time-sent.es) +(num-week.us) num-week.us)
         +(num-month.us)
     ==
-  $(es t.es)
+  $(posts t.posts)
 ++  after-date
   |=  [interval=@dr d=@da]
   ^-  ?  (gte d (sub now.bowl interval))
@@ -295,7 +302,7 @@
   |=  only-mine=?
   ^-  (list [rid=resource:resource =app-path:md title=@t])
   %+  turn
-  %+  skim  ~(tap by (scry-md-assocs %chat))
+  %+  skim  ~(tap by (scry-md-assocs %graph))
     |=([[gp=group-path:md *] *] ((group-filter only-mine) gp))
   |=([[gp=group-path:md @ ap=app-path:md] m=metadata:md] [(de-path:resource gp) ap title.m])
 ++  my-chats
@@ -317,8 +324,10 @@
   (get-group-names %.y)
 ::
 ++  msg-after
-  |=  [m1=msg m2=msg]
-  ^-  ?  (gth when.e.m1 when.e.m2)
+  |=  [a=msg-node b=msg-node]
+  ~!  a
+  ^-  ?  (gth time-sent.post.a time-sent.post.b)
+::
 ++  scry-md-assocs
   |=  app=app-name:md
   .^  associations:md
@@ -339,4 +348,30 @@
     %mailbox
     (snoc `path`pax %noun)
   ==
+++  safe-get-graph
+  |=  =resource
+  ^-  (unit update:graph-store)
+  =/  res=(unit update:update:graph-store)  (get-graph resource)
+  ?~  res  ~
+  ?>  ?=(%add-graph -.q.u.res)
+  ?.  =(`%graph-validator-chat mark.q.u.res)
+    ~
+ res
+++  safe-get-graph-mop
+  |=  =resource
+  ^-  (unit graph:graph-store)
+  =/  res=(unit update:graph-store)  (safe-get-graph resource)
+  ?~  res  ~
+  ?>  ?=(%0 -.u.res)
+  ?>  ?=(%add-graph -.q.u.res)
+  `graph.q.u.res
+++  get-graph
+  |=  res=resource
+  ^-  (unit update:graph-store)
+  =/  exists=?
+    %.  res
+    =-  ~(has in -)
+    (sy ~(tap by get-keys:lg))
+  ?.  exists  ~
+  `(get-graph:lg res)
 --
