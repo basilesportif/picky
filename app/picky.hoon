@@ -197,7 +197,8 @@
   |-
   ?~  logs  ms
   ?:  (gte seen num-msgs)  ms
-  =/  msg-node  post.val.i.logs
+  ?.  ?=(%& -.post.val.i.logs)  $(logs t.logs)
+  =/  msg-node=post:post  +.post.val.i.logs
   ?.  (after-date cutoff time-sent.msg-node)  ms
   ?.  =(user author.msg-node)  $(logs t.logs)
   $(logs t.logs, seen +(seen), ms (put:orm ms [chat-path msg-node] ~))
@@ -249,7 +250,8 @@
   =/  posts  (tap:orm:graph-store graph)
   |-  ^-  user-summary
   ?~  posts  us
-  =/  es=post:post  post.val.i.posts
+  ?.  ?=(%& -.post.val.i.posts)  $(posts t.posts)
+  =/  es=post:post  +.post.val.i.posts
   ?.  (after-date ~d30 time-sent.es)  us
   ?.  =(author.es user)  $(posts t.posts)
   =.  us
@@ -263,9 +265,7 @@
 ::
 ::
 ++  is-my-group
-  |=  gp=group-path:md  ^-  ?
-  =/  rid=resource
-    (de-path:resource gp)
+  |=  rid=resource  ^-  ?
   ?:  (~(has in ignored) rid)
     %.n
   ?:  =(entity.rid our.bowl)
@@ -280,12 +280,13 @@
 ++  get-chats-by-group
   |=  only-mine=?
   ^-  (jug resource chat-meta)
-  =/  mc  ?:(only-mine my-chats (all-chats %.n))
+  =/  mc=(list [gp=resource =md-resource:md title=@t])  ?:(only-mine my-chats (all-chats %.n))
   =|  metas=(jug resource chat-meta)
   |-
   ?~  mc  metas
+  ~!  i.mc
   =.  metas
-    (~(put ju metas) rid.i.mc [app-path.i.mc title.i.mc])
+    (~(put ju metas) gp.i.mc [(en-path:resource resource.md-resource.i.mc) title.i.mc])
   $(mc t.mc)
 ++  all-chats-by-group
   (get-chats-by-group %.n)
@@ -295,27 +296,28 @@
 ::
 ++  group-filter
   |=  only-mine=?
-  ^-  $-(group-path:md ?)
-  ?:(only-mine is-my-group |=(group-path:md %.y))
+  ^-  $-(resource:resource ?)
+  ?:(only-mine is-my-group |=(resource:resource %.y))
 ::
 ++  all-chats
   |=  only-mine=?
-  ^-  (list [rid=resource:resource =app-path:md title=@t])
-  %+  turn
-  %+  skim  ~(tap by (scry-md-assocs %graph))
-    |=([[gp=group-path:md *] *] ((group-filter only-mine) gp))
-  |=([[gp=group-path:md @ ap=app-path:md] m=metadata:md] [(de-path:resource gp) ap title.m])
+  ^-  (list [gp=resource =md-resource:md title=@t])
+  =/  filtered=(list [md-resource:md association:md])  %+  skim  ~(tap by (scry-md-assocs %graph))
+    |=([[term =resource:resource] *] ((group-filter only-mine) resource))
+  ~!  filtered
+  %+  turn  filtered
+  |=([=md-resource:md [=resource:resource m=metadatum:md]] [resource md-resource title.m])
 ++  my-chats
-  ^-  (list [rid=resource:resource =app-path:md title=@t])
+  ^-  (list [gp=resource =md-resource:md title=@t])
   (all-chats %.y)
 ++  get-group-names
   |=  only-mine=?
   ^-  group-names
   %-  ~(gas by *group-names)
-    %+  turn
-      %+  skim  ~(tap by (scry-md-assocs %contacts))
-      |=([[gp=group-path:md *] *] ((group-filter only-mine) gp))
-    |=([[gp=group-path:md *] m=metadata:md] [(de-path:resource gp) title.m])
+  =/  filtered=(list [md-resource:md association:md])  %+  skim  ~(tap by (scry-md-assocs %contacts))
+    |=([[term =resource:resource] *] ((group-filter only-mine) resource))
+  %+  turn  filtered                                    ::
+  |=([=md-resource:md [=resource:resource m=metadatum:md]] [resource title.m])
 ::
 ++  all-group-names
   (get-group-names %.n)
@@ -351,7 +353,7 @@
 ++  safe-get-graph
   |=  =resource
   ^-  (unit update:graph-store)
-  =/  res=(unit update:update:graph-store)  (get-graph resource)
+  =/  res=(unit update:graph-store)  (get-graph resource)
   ?~  res  ~
   ?>  ?=(%add-graph -.q.u.res)
   ?.  =(`%graph-validator-chat mark.q.u.res)
@@ -362,7 +364,7 @@
   ^-  (unit graph:graph-store)
   =/  res=(unit update:graph-store)  (safe-get-graph resource)
   ?~  res  ~
-  ?>  ?=(%0 -.u.res)
+  ::  ?>  ?=(%0 -.u.res)
   ?>  ?=(%add-graph -.q.u.res)
   `graph.q.u.res
 ++  get-graph
